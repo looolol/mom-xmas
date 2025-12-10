@@ -1,0 +1,65 @@
+{
+  "configVersion": 1,
+  "timestamp": 1765347972505,
+  "index": "/mom-xmas/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/mom-xmas/index.html",
+        "/mom-xmas/main.26f8245c97aa9b99.js",
+        "/mom-xmas/manifest.webmanifest",
+        "/mom-xmas/polyfills.a46bd56511033644.js",
+        "/mom-xmas/runtime.9e5a0612ff97c217.js",
+        "/mom-xmas/styles.948137f811258360.css"
+      ],
+      "patterns": []
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/mom-xmas/assets/tarmogoyf.png"
+      ],
+      "patterns": []
+    }
+  ],
+  "dataGroups": [],
+  "hashTable": {
+    "/mom-xmas/assets/tarmogoyf.png": "cedcc0261d98ac2abdf94b03e3f148893314f620",
+    "/mom-xmas/index.html": "3d34041a930c473f05ff9e704ccac8b09851da5d",
+    "/mom-xmas/main.26f8245c97aa9b99.js": "392ff6c9da4c82651bc498e64b8b211c1517b7a5",
+    "/mom-xmas/manifest.webmanifest": "40ebe45e4e51e426917d36fb81358957a704109a",
+    "/mom-xmas/polyfills.a46bd56511033644.js": "180c04c52b4c414faf328958ade2d2fdefc83336",
+    "/mom-xmas/runtime.9e5a0612ff97c217.js": "a6361d5279281c07e0efe240554d2169e679a0fa",
+    "/mom-xmas/styles.948137f811258360.css": "abb75b5e51e99ebf5884f72471efce16e1a4905f"
+  },
+  "navigationUrls": [
+    {
+      "positive": true,
+      "regex": "^\\/.*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*\\.[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*\\/.*$"
+    }
+  ],
+  "navigationRequestStrategy": "performance"
+}
