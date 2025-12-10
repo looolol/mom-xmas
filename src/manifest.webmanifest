@@ -1,0 +1,17 @@
+{
+  "name": "mom-xmas",
+  "short_name": "mom-xmas",
+  "theme_color": "#1976d2",
+  "background_color": "#fafafa",
+  "display": "standalone",
+  "scope": "/mom-xmas/",
+  "start_url": "/mom-xmas/",
+  "icons": [
+    {
+      "src": "/mom-xmas/assets/tarmogoyf.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ]
+}
