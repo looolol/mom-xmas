@@ -1,0 +1,40 @@
+.board {
+  display: grid;
+  grid-template-columns: repeat(6, 50px);
+  grid-template-rows: repeat(6, 50px);
+  gap: 5px;
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+}
+
+.cell {
+  position: relative;
+  overflow: visible;
+  z-index: auto;
+  //background-color: white;
+  border: 1px solid #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+
+  transition: background-color 0.3s ease;
+  will-change: background-color, transform, opacity;
+}
+
+/* swap transform on cell itself must be reset */
+.cell.swap-left,
+.cell.swap-right,
+.cell.swap-up,
+.cell.swap-down {
+  transform: none;
+}
+
+/* You can keep other styles here, e.g. selected */
+.selected {
+  outline: 3px solid gold;
+  background-color: #222;
+  color: white;
+}

@@ -1,0 +1,26 @@
+<h2>Mom's Droid Match</h2>
+<p>Score: {{score}}</p>
+<div class="board" [class.settling]="isSettling">
+  <div
+    *ngFor="let cell of cells; let i = index; trackBy: trackByIndex"
+    class="cell"
+    [class.cleared]="clearedIndices.has(i)"
+    [class.spawned]="spawnedIndices.has(i)"
+    [class.selected]="selectedIndices.includes(i)"
+    [class.swapping]="swappingIndices.has(i)"
+    (click)="onCellClick(i)"
+  >
+    <app-tile
+      [value]="cell"
+      [cleared]="clearedIndices.has(i)"
+      [spawned]="spawnedIndices.has(i)"
+      [selected]="selectedIndices.includes(i)"
+      [swapping]="swappingIndices.has(i)"
+      [swapDirection]="swapDirection[i] || null"
+      [fallDistance]="fallDistances[i] || 0"
+      [maxFallDistance]="maxFallDistance"
+      (fallAnimationDone)="onTileFallAnimationDone(i)"
+    >
+    </app-tile>
+  </div>
+</div>
