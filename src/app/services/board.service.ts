@@ -133,11 +133,6 @@ export class BoardService {
     return column;
   }
 
-  swap(a: Cell, b: Cell) {}
-  resolveBoard(): Promise<void> {
-    return Promise.resolve();
-  }
-  findMatches(): Cell[][] { return []; }
-  collapse(): void {}
-  spawn(): void {}
+  animateSwap(a: Cell, b: Cell) { }
+  animateClear(matchCells: Cell[]): void { }
 }
