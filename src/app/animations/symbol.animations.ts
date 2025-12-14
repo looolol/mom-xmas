@@ -1,9 +1,9 @@
-import {animate, state, style, transition, trigger} from '@angular/animations';
+import {animate, keyframes, state, style, transition, trigger} from '@angular/animations';
 import {AnimationMode} from '../models/animation.model';
 
 export const dropAnimation = trigger('drop', [
-  state('falling', style({ transform: 'translateY(0)', opacity: 1 })),
-  state('landed', style( {transform: 'translateY(0)', opacity: 1 })),
+  state(AnimationMode.Falling, style({ transform: 'translateY(0)', opacity: 1 })),
+  state(AnimationMode.Landing, style( {transform: 'translateY(0)', opacity: 1 })),
 
   transition(AnimationMode.None + " => " + AnimationMode.Falling, [
     style({ transform: 'translateY({{offset}})', opacity: 0 }),
@@ -21,7 +21,7 @@ export const dropAnimation = trigger('drop', [
 ]);
 
 export const swapAnimation = trigger('swap', [
-  state('default', style({ transform: 'translate(0, 0)' })),
+  state(AnimationMode.None, style({ transform: 'translate(0, 0)' })),
 
   transition(AnimationMode.None + " => " + AnimationMode.Swapping, [
     animate('300ms ease-in-out', style({ transform: 'translate({{x}}px, {{y}}px'}))
@@ -29,5 +29,21 @@ export const swapAnimation = trigger('swap', [
 
   transition(AnimationMode.Swapping + " => " + AnimationMode.None, [
     animate('300ms ease-in-out', style({ transform: 'translate(0, 0)'}))
+  ]),
+]);
+
+export const clearingAnimation = trigger('clearing', [
+  transition(AnimationMode.None + " => " + AnimationMode.Clearing, [
+    animate('400ms ease-out', keyframes([
+      style({ opacity: 1, filter: 'brightness(2)', transform: 'scale(1) rotate(0deg)', offset: 0 }),
+      style({ opacity: 1, filter: 'brightness(1)', transform: 'scale(1.2) rotate(15deg)', offset: 0.15 }),
+
+      style({ opacity: 0.7, filter: 'brightness(1)', transform: 'scale(1.5) rotate(-10deg)', offset: 0.6 }),
+      style({ opacity: 0, filter: 'brightness(1)', transform: 'scale(2) rotate(45deg)', offset: 1 }),
+    ])),
+  ]),
+
+  transition(AnimationMode.Clearing + " => " + AnimationMode.None, [
+    style({ opacity: 1, filter: 'brightness(1)', transform: 'scale(1) rotate(0deg)' }),
   ]),
 ]);

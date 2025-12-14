@@ -8,10 +8,22 @@
     value: symbol.animationMode === AnimationMode.Swapping ? AnimationMode.Swapping : AnimationMode.None,
     params: directionToOffset(symbol.swapDirection) || { x: 0, y: 0 }
   }"
+  [@clearing]="{
+    value: symbol.animationMode === AnimationMode.Clearing ? AnimationMode.Clearing : AnimationMode.None,
+  }"
   (@drop.start)="onAnimationStart($event)"
   (@drop.done)="onAnimationDone($event)"
   (@swap.start)="onAnimationStart($event)"
   (@swap.done)="onAnimationDone($event)"
+  (@clearing.start)="onAnimationStart($event)"
+  (@clearing.done)="onAnimationDone($event)"
 >
+
   {{ symbol.kind }}
+
+  <div class="flash-overlay-star-wrapper" *ngIf="symbol.animationMode === AnimationMode.Clearing">
+    <div class="flash-overlay-star-white"></div>
+    <div class="flash-overlay-star-gradient"></div>
+  </div>
+
 </div>

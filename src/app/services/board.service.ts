@@ -17,9 +17,9 @@ export class BoardService {
   private readonly _board$ = new BehaviorSubject<BoardState | null>(null)
   readonly board$ = this._board$.asObservable();
 
-  private cellMap = new Map<number, Cell>();
 
   constructor(private animationService: AnimationService) { }
+
 
   initBoard(config: BoardConfig) {
     const board = this.createBoard(config);
@@ -31,11 +31,6 @@ export class BoardService {
     if (board) {
       this._board$.next({ ...board });
     }
-  }
-
-  reset() {
-    this.cellMap.clear();
-    this._board$.next(null);
   }
 
   private createBoard(config: BoardConfig): BoardState {
@@ -57,11 +52,6 @@ export class BoardService {
     }
 
     const board: BoardState = { rows, cols, cells };
-
-    this.cellMap.clear();
-    for (const cell of cells) {
-      this.cellMap.set(cell.index, cell);
-    }
 
     this.seedBoard(board);
     return board;
@@ -86,8 +76,19 @@ export class BoardService {
         kind: symbolKind,
         animationMode: AnimationMode.None,
         fallingFrom: FALLING_FROM_OFFBOARD,
-      }
+      };
     }
+  }
+
+  public async dropAndFill(): Promise<void> {
+    const board = this._board$.getValue();
+    if (!board) return;
+
+    // 1. Find cells with undefined symbols (empty)
+    // 2. For each column, move symbols down to fill empties (simulate gravity)
+    // 3. Fill empty top cells with new random symbols (seedColumn or similar)
+    // 4. Animate drops for each affected column
+    // 5. Update the board observable
   }
 
   private pickSymbolForCell(board: BoardState, cell: Cell): string {
@@ -106,7 +107,6 @@ export class BoardService {
 
   private checkMatchInDirection(board: BoardState, cell: Cell, deltaRow: number, deltaCol: number, depth: number = MATCH_CHECK_DEPTH): string | null {
     if (!cell.symbol) return null;
-
     const baseKind = cell.symbol.kind;
 
     for (let step = 1; step <= depth; step++) {
@@ -130,7 +130,11 @@ export class BoardService {
       return undefined;
     }
 
-    return this.cellMap.get(getIndex(row, col, board.cols));
+    return board.cells[getIndex(row, col, board.cols)];
+  }
+
+  public getCellPublic(row: number, col: number): Cell | undefined {
+    return this.withBoard(board => this.getCell(board, row, col));
   }
 
   private getColumn(board: BoardState, col: number): Cell[] {
@@ -146,50 +150,55 @@ export class BoardService {
     return column;
   }
 
+  private withBoard<T>(fn: (board: BoardState) => T): T | undefined {
+    const board = this._board$.getValue();
+    if (!board) return undefined;
+    return fn(board);
+  }
+
 
   // Animations
 
   public async animateDrop(col: number, fallingFrom: number): Promise<void> {
-    const board = this._board$.getValue();
-    if (!board) return;
+    await this.withBoard(async (board) => {
+      // Find first cell in the column that has a symbol;
+      const cell = board.cells.find(c => c.col === col && c.symbol);
+      if (!cell || !cell.symbol || !this.animationService.canAnimate(cell.symbol)) return;
 
-    // Find first cell in the column that has a symbol;
-    const cell = board.cells.find(c => c.col === col && c.symbol);
-    if (!cell || !cell.symbol || !this.animationService.canAnimate(cell.symbol)) return;
+      await this.animationService.startAnimationAsync({
+        symbol: cell.symbol,
+        mode: AnimationMode.Falling,
+        params: { fallingFrom },
+        onDone: () => {
+          this.updateBoard();
+        }
+      });
 
-    await this.animationService.startAnimationAsync({
-      symbol: cell.symbol,
-      mode: AnimationMode.Falling,
-      params: { fallingFrom },
-      onDone: () => {
-        this.updateBoard();
-      }
+      this.updateBoard();
     });
-
-    this.updateBoard();
   }
 
 
   public async animateSwap(a: Cell, b: Cell): Promise<void> {
-    console.log("animateSwap", a, b);
-    const board = this._board$.getValue();
-    if (!board || !a.symbol || !b.symbol || !this.animationService.canAnimate(a.symbol, b.symbol)) return;
+    await this.withBoard(async (board) => {
+      if (!a.symbol || !b.symbol || !this.animationService.canAnimate(a.symbol, b.symbol)) return;
 
-    const dir = getSwapDirection(a, b);
-    if (!dir) {
-      console.warn('Cells are not adjacent, cannot swap.');
-      return;
-    }
+      const dir = getSwapDirection(a, b);
+      if (!dir) {
+        console.warn('Cells are not adjacent, cannot swap.');
+        return;
+      }
 
-    await this.animationService.runPairedAnimation(
-      a.symbol,
-      b.symbol,
-      { symbol: a.symbol, mode: AnimationMode.Swapping, params: { swapDirection: dir }},
-      { symbol: b.symbol, mode: AnimationMode.Swapping, params: { swapDirection: oppositeDirection(dir)}}
-    );
+      await this.animationService.runPairedAnimation(
+        a.symbol,
+        b.symbol,
+        {symbol: a.symbol, mode: AnimationMode.Swapping, params: {swapDirection: dir}},
+        {symbol: b.symbol, mode: AnimationMode.Swapping, params: {swapDirection: oppositeDirection(dir)}}
+      );
 
-    this.swap(a, b);
-    this.updateBoard();
+      this.swap(a, b);
+      this.updateBoard();
+    });
   }
 
   private swap(a: Cell, b: Cell) {
@@ -199,6 +208,34 @@ export class BoardService {
   }
 
 
-  public async animateClear(matchCells: Cell[]): Promise<void> { }
+  public async animateClear(matchCells: Cell[]): Promise<void> {
+    await this.withBoard(async (board) => {
+
+      // Filter out cells without symbols or already animating
+      const cellsToClear = matchCells.filter(cell => cell.symbol && this.animationService.canAnimate(cell.symbol));
+
+      console.log("Clearing animations...");
+      // Start clearing animations
+      await Promise.all(cellsToClear.map(cell =>
+        this.animationService.startAnimationAsync({
+          symbol: cell.symbol!,
+          mode: AnimationMode.Clearing,
+        })
+      ));
+
+      console.log("Clearing symbols...");
+
+      // After animations finish, clear symbols
+      for (const cell of cellsToClear) {
+        cell.symbol = undefined;
+      }
+
+      console.log("Done!");
+
+      this.updateBoard();
+
+      // TODO: trigger falling animation for symbols above, refill board, etc
+    });
+  }
 
 }

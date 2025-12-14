@@ -1,22 +1,22 @@
 import {Component, Input} from '@angular/core';
 import {SymbolModel} from '../../../../models/symbol.model';
 import {TILE_SIZE_PX} from '../../../../utils/constants';
-import {dropAnimation, swapAnimation} from '../../../../animations/symbol.animations';
+import {clearingAnimation, dropAnimation, swapAnimation} from '../../../../animations/symbol.animations';
 import {AnimationEvent} from '@angular/animations';
 import {directionToOffset} from '../../../../models/direction.model';
 import {AnimationMode} from '../../../../models/animation.model';
 import {AnimationService} from '../../../../services/animation.service';
+import {CommonModule} from '@angular/common';
 
-
-class AnimationManager {
-}
 
 @Component({
   selector: 'app-symbol',
-  imports: [],
+  imports: [
+    CommonModule,
+  ],
   templateUrl: './symbol.component.html',
   styleUrl: './symbol.component.scss',
-  animations: [dropAnimation, swapAnimation],
+  animations: [dropAnimation, swapAnimation, clearingAnimation],
 })
 export class SymbolComponent {
 
@@ -25,11 +25,9 @@ export class SymbolComponent {
   constructor(private animationService: AnimationService) { }
 
   onAnimationStart(event: AnimationEvent) {
-    console.log('Animation started:', event.fromState, "=>", event.toState, event);
   }
 
   onAnimationDone(event: AnimationEvent) {
-    console.log('Animation done:', event.fromState, "=>", event.toState, event);
     if (event.toState === AnimationMode.None) return;
     this.animationService.finishAnimation(this.symbol);
   }

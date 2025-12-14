@@ -1,3 +1,7 @@
+<div *ngIf="score$ | async as score">
+  <span>Score: {{score}}</span>
+</div>
+
 <div *ngIf="board$ | async as board">
   <div class="board"
     [style.grid-template-rows]="'repeat(' + board.rows + ', ' + TILE_SIZE_PX +'px)'"

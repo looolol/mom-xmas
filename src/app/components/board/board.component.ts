@@ -7,6 +7,7 @@ import {Cell} from '../../models/cell.model';
 import {TILE_SIZE_PX} from '../../utils/constants';
 import {BoardState} from '../../models/board.model';
 import {Subject, takeUntil} from 'rxjs';
+import {GameService} from '../../services/game.service';
 
 @Component({
   selector: 'app-board',
@@ -19,16 +20,27 @@ import {Subject, takeUntil} from 'rxjs';
 })
 export class BoardComponent implements OnInit, OnDestroy {
 
-  private destroy$ = new Subject<void>();
   board: BoardState | null = null;
+  score: number = 0;
 
-  constructor(private boardService: BoardService) { }
+  private destroy$ = new Subject<void>();
+
+
+  constructor(
+    private boardService: BoardService,
+    private gameService: GameService,
+  ) { }
 
   ngOnInit() {
-    this.boardService.initBoard(LEVEL_1.board);
+    this.gameService.startGame(LEVEL_1.board);
+
     this.boardService.board$
       .pipe(takeUntil(this.destroy$))
       .subscribe(board => this.board = board);
+
+    this.gameService.score$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(score => this.score = score);
   }
 
   ngOnDestroy() {
@@ -38,6 +50,10 @@ export class BoardComponent implements OnInit, OnDestroy {
 
   get board$() {
     return this.boardService.board$;
+  }
+
+  get score$() {
+    return this.gameService.score$;
   }
 
   trackByCell(idx: number, cell: Cell) {
@@ -54,8 +70,17 @@ export class BoardComponent implements OnInit, OnDestroy {
     const cellA = this.board.cells[0];
     const cellB = this.board.cells[1];
 
-    this.boardService.animateSwap(cellA, cellB);
+    this.onPlayerSwap(cellA, cellB);
   }
+
+  async onPlayerSwap(cellA: Cell, cellB: Cell) {
+    console.log('onPlayerSwap', cellA, cellB);
+    const success = await this.gameService.playerSwap(cellA, cellB);
+    if (!success) {
+      // optionall show some message or animation for invalid swap
+    }
+  }
+
 
   testClearMatch() {
     if (!this.board) return;
