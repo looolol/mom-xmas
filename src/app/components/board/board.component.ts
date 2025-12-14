@@ -45,7 +45,7 @@ export class BoardComponent implements OnInit, OnDestroy {
   }
 
   testDropSymbol(col: number) {
-    this.boardService.setSymbolFallingFromInColumn(col, 3);
+    this.boardService.animateDrop(col, 3);
   }
 
   testSwap() {

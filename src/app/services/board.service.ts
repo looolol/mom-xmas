@@ -1,10 +1,13 @@
-import { Injectable } from '@angular/core';
+import {Injectable} from '@angular/core';
 import {BehaviorSubject} from 'rxjs';
 import {BoardConfig, BoardState} from '../models/board.model';
 import {Cell, CellTypeEnum} from '../models/cell.model';
 import {randomSymbolExcluding} from '../utils/random-symbol';
 import {getIndex} from '../utils/board.utils';
 import {FALLING_FROM_OFFBOARD, MATCH_CHECK_DEPTH} from '../utils/constants';
+import {getSwapDirection, oppositeDirection} from '../models/direction.model';
+import {AnimationService} from './animation.service';
+import {AnimationMode} from '../models/animation.model';
 
 @Injectable({
   providedIn: 'root'
@@ -16,9 +19,18 @@ export class BoardService {
 
   private cellMap = new Map<number, Cell>();
 
+  constructor(private animationService: AnimationService) { }
+
   initBoard(config: BoardConfig) {
     const board = this.createBoard(config);
     this._board$.next(board);
+  }
+
+  private updateBoard() {
+    const board = this._board$.getValue();
+    if (board) {
+      this._board$.next({ ...board });
+    }
   }
 
   reset() {
@@ -39,7 +51,7 @@ export class BoardService {
           col,
           index: getIndex(row, col, cols),
           type,
-          symbol: null
+          symbol: undefined,
         });
       }
     }
@@ -51,11 +63,11 @@ export class BoardService {
       this.cellMap.set(cell.index, cell);
     }
 
-    this.populateInitialSymbols(board);
+    this.seedBoard(board);
     return board;
   }
 
-  private populateInitialSymbols(board: BoardState) {
+  private seedBoard(board: BoardState) {
     for (let col = 0; col < board.cols; col++) {
       this.fillColumn(board, col);
     }
@@ -72,6 +84,7 @@ export class BoardService {
       cell.symbol = {
         id: crypto.randomUUID(),
         kind: symbolKind,
+        animationMode: AnimationMode.None,
         fallingFrom: FALLING_FROM_OFFBOARD,
       }
     }
@@ -133,25 +146,59 @@ export class BoardService {
     return column;
   }
 
-  public setSymbolFallingFromInColumn(col: number, fallingFrom: number) {
+
+  // Animations
+
+  public async animateDrop(col: number, fallingFrom: number): Promise<void> {
     const board = this._board$.getValue();
     if (!board) return;
 
     // Find first cell in the column that has a symbol;
     const cell = board.cells.find(c => c.col === col && c.symbol);
-    if (!cell || !cell.symbol) return;
+    if (!cell || !cell.symbol || !this.animationService.canAnimate(cell.symbol)) return;
 
-    // Reset to landed (or undefined) so animation state changes
-    cell.symbol.fallingFrom = -1;
-    this._board$.next({...board});
+    await this.animationService.startAnimationAsync({
+      symbol: cell.symbol,
+      mode: AnimationMode.Falling,
+      params: { fallingFrom },
+      onDone: () => {
+        this.updateBoard();
+      }
+    });
 
-    // Small delay to allow Angular to register state change
-    setTimeout(() => {
-      cell.symbol!.fallingFrom = fallingFrom;
-      this._board$.next({...board});
-    }, 20);
+    this.updateBoard();
   }
 
-  animateSwap(a: Cell, b: Cell) { }
-  animateClear(matchCells: Cell[]): void { }
+
+  public async animateSwap(a: Cell, b: Cell): Promise<void> {
+    console.log("animateSwap", a, b);
+    const board = this._board$.getValue();
+    if (!board || !a.symbol || !b.symbol || !this.animationService.canAnimate(a.symbol, b.symbol)) return;
+
+    const dir = getSwapDirection(a, b);
+    if (!dir) {
+      console.warn('Cells are not adjacent, cannot swap.');
+      return;
+    }
+
+    await this.animationService.runPairedAnimation(
+      a.symbol,
+      b.symbol,
+      { symbol: a.symbol, mode: AnimationMode.Swapping, params: { swapDirection: dir }},
+      { symbol: b.symbol, mode: AnimationMode.Swapping, params: { swapDirection: oppositeDirection(dir)}}
+    );
+
+    this.swap(a, b);
+    this.updateBoard();
+  }
+
+  private swap(a: Cell, b: Cell) {
+    const temp = a.symbol;
+    a.symbol = b.symbol;
+    b.symbol = temp;
+  }
+
+
+  public async animateClear(matchCells: Cell[]): Promise<void> { }
+
 }

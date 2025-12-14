@@ -13,5 +13,5 @@ export interface Cell {
   col: number;
   index: number;
   type: CellType;
-  symbol: SymbolModel | null;
+  symbol: SymbolModel | undefined;
 }

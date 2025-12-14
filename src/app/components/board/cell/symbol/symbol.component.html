@@ -1,11 +1,17 @@
 <div
   class="symbol"
   [@drop]="{
-    value: symbol.fallingFrom >= 0 ? 'falling' : 'landed',
+    value: symbol.animationMode === AnimationMode.Falling ? AnimationMode.Falling : AnimationMode.Landing,
     params: { offset: '-' + ((symbol.fallingFrom + 1) * TILE_SIZE_PX) + 'px' }
+  }"
+  [@swap]="{
+    value: symbol.animationMode === AnimationMode.Swapping ? AnimationMode.Swapping : AnimationMode.None,
+    params: directionToOffset(symbol.swapDirection) || { x: 0, y: 0 }
   }"
   (@drop.start)="onAnimationStart($event)"
   (@drop.done)="onAnimationDone($event)"
+  (@swap.start)="onAnimationStart($event)"
+  (@swap.done)="onAnimationDone($event)"
 >
   {{ symbol.kind }}
 </div>
