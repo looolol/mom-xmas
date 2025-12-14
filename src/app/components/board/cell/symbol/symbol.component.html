@@ -1,6 +1,11 @@
 <div
   class="symbol"
-  [style.transform]="'translateY(' + translateY + 'px)'"
+  [@drop]="{
+    value: symbol.fallingFrom >= 0 ? 'falling' : 'landed',
+    params: { offset: '-' + ((symbol.fallingFrom + 1) * TILE_SIZE_PX) + 'px' }
+  }"
+  (@drop.start)="onAnimationStart($event)"
+  (@drop.done)="onAnimationDone($event)"
 >
   {{ symbol.kind }}
 </div>

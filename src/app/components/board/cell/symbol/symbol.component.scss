@@ -1,6 +1,7 @@
+@import 'src/styles/variables';
+
 .symbol {
   display: inline-block;
-  transition: transform 0.4s ease;
-  font-size: 28px;
+  font-size: $symbol-font-size-px;
   user-select: none;
 }

@@ -133,6 +133,25 @@ export class BoardService {
     return column;
   }
 
+  public setSymbolFallingFromInColumn(col: number, fallingFrom: number) {
+    const board = this._board$.getValue();
+    if (!board) return;
+
+    // Find first cell in the column that has a symbol;
+    const cell = board.cells.find(c => c.col === col && c.symbol);
+    if (!cell || !cell.symbol) return;
+
+    // Reset to landed (or undefined) so animation state changes
+    cell.symbol.fallingFrom = -1;
+    this._board$.next({...board});
+
+    // Small delay to allow Angular to register state change
+    setTimeout(() => {
+      cell.symbol!.fallingFrom = fallingFrom;
+      this._board$.next({...board});
+    }, 20);
+  }
+
   animateSwap(a: Cell, b: Cell) { }
   animateClear(matchCells: Cell[]): void { }
 }
