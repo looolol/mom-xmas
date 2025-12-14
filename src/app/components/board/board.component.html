@@ -1,0 +1,11 @@
+<div *ngIf="board$ | async as board">
+  <div class="board"
+    [style.grid-template-rows]="'repeat(' + board.rows + ', ' + TILE_SIZE_PX +'px)'"
+    [style.grid-template-columns]="'repeat(' + board.cols + ', ' + TILE_SIZE_PX +'px)'"
+  >
+    <app-cell
+      *ngFor="let cell of board.cells; trackBy: trackByCell"
+      [cell]="cell">
+    </app-cell>
+  </div>
+</div>

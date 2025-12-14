@@ -1,0 +1,17 @@
+@import 'src/styles/variables';
+
+.board {
+  display: grid;
+  gap: 4px; /* spacing between tiles */
+  background-color: $board-bg-color; /* dark background for contrast */
+  padding: 8px;
+  border-radius: 8px;
+  user-select: none;
+  width: fit-content; /* shrinkwrap to grid size */
+  margin: 0 auto; /* center horizontally */
+}
+
+/* Optional: add a subtle drop shadow for the whole board */
+.board {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
