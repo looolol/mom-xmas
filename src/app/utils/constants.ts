@@ -10,6 +10,8 @@ export const FALLING_ANIMATION_DURATIONS_MS = 400;
 
 export const SYMBOL_FONT_SIZE_PX = 28;
 
+export const POINTS_PER_CELL = 10;
+
 export const BOARD_BACKGROUND_COLOR = '#1e1e2F';
 export const CELL_BACKGROUND_COLOR = '#28293d';
 export const CELL_BLOCKED_COLOR = '#11111f';

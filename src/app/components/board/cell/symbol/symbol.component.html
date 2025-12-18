@@ -6,7 +6,7 @@
   }"
   [@swap]="{
     value: symbol.animationMode === AnimationMode.Swapping ? AnimationMode.Swapping : AnimationMode.None,
-    params: directionToOffset(symbol.swapDirection) || { x: 0, y: 0 }
+    params: getDirectionDisplayOffset(symbol.swapDirection) || { x: '0px', y: '0px' }
   }"
   [@clearing]="{
     value: symbol.animationMode === AnimationMode.Clearing ? AnimationMode.Clearing : AnimationMode.None,

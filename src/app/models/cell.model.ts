@@ -1,17 +1,38 @@
 import { SymbolModel } from './symbol.model';
+import {Position} from './position.model';
 
-export enum CellTypeEnum {
+export enum CellType {
   Normal = 0,
   Blocked = 1,
   Null = 2,
 }
 
-export type CellType = keyof typeof CellTypeEnum | (typeof CellTypeEnum)[keyof typeof CellTypeEnum];
+export class Cell {
+  constructor(
+    public pos: Position,
+    public index: number,
+    public type: CellType,
+    public symbol?: SymbolModel,
+  ) { }
 
-export interface Cell {
-  row: number;
-  col: number;
-  index: number;
-  type: CellType;
-  symbol: SymbolModel | undefined;
+  isBlocked(): this is { symbol: SymbolModel} {
+    return this.type === CellType.Blocked;
+  }
+
+  hasSymbol(): boolean {
+    return !!this.symbol;
+  }
+
+  getSymbolKind(): string {
+    return this.symbol!.getKind();
+  }
+
+  withSymbol(symbolModel: SymbolModel | undefined): Cell {
+    return new Cell(this.pos, this.index, this.type, symbolModel);
+  }
+
+  isAdjacent(other: Cell): boolean {
+    const diff = this.pos.sub(other.pos).abs();
+    return (diff.row === 1 && diff.col === 0) || (diff.row === 0 && diff.col === 1);
+  }
 }

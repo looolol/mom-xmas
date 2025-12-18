@@ -16,6 +16,11 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
+.selected {
+  outline: 2px solid yellow;
+  cursor: pointer;
+}
+
 
 .controls {
   margin: 16px 0;

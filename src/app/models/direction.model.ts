@@ -1,43 +1,69 @@
 import {TILE_SIZE_PX} from '../utils/constants';
-import {Cell} from './cell.model';
+import {Position} from './position.model';
 
-export enum Direction {
-  UP = 'up',
-  DOWN = 'down',
-  LEFT = 'left',
-  RIGHT = 'right',
+export enum Dir {
+  UP = 'UP',
+  DOWN = 'DOWN',
+  LEFT = 'LEFT',
+  RIGHT = 'RIGHT',
 }
 
-export function oppositeDirection(dir: Direction): Direction {
-  switch (dir) {
-    case Direction.UP: return Direction.DOWN;
-    case Direction.DOWN: return Direction.UP;
-    case Direction.LEFT: return Direction.RIGHT;
-    case Direction.RIGHT: return Direction.LEFT;
+export class Direction {
+  public displayOffset: Position;
+
+  constructor(
+    public name: Dir,
+    public delta: Position,
+    public opposite: Dir
+  ) {
+    this.displayOffset = new Position(delta.row * TILE_SIZE_PX, delta.col * TILE_SIZE_PX);
+  }
+
+  static fromName(name: Dir): Direction {
+    return Directions[name];
+  }
+
+  addTo(pos: Position, steps = 1): Position {
+    return pos.add(this.delta.multiply(steps));
   }
 }
 
-export const directionToOffset = (dir: Direction | undefined): { x: number; y: number } => {
-  if (!dir) return { x: 0, y: 0 };
+export const Directions: Record<Dir, Direction> = {
+  [Dir.UP]: new Direction(Dir.UP, new Position(-1, 0), Dir.DOWN),
+  [Dir.DOWN]: new Direction(Dir.DOWN, new Position(1, 0), Dir.UP),
+  [Dir.LEFT]: new Direction(Dir.LEFT, new Position(0, -1), Dir.RIGHT),
+  [Dir.RIGHT]: new Direction(Dir.RIGHT, new Position(0, 1), Dir.LEFT)
+}
 
-  switch (dir) {
-    case Direction.UP: return { x: 0, y: -TILE_SIZE_PX }
-    case Direction.DOWN: return { x: 0, y: TILE_SIZE_PX }
-    case Direction.LEFT: return { x: -TILE_SIZE_PX, y: 0 }
-    case Direction.RIGHT: return { x: TILE_SIZE_PX, y: 0 }
+export function getOppositeDirection(direction: Direction): Direction {
+  return Directions[direction.opposite];
+}
+
+export function getDirectionDelta(dir: Dir): Position {
+  return Directions[dir].delta;
+}
+
+export function getDirectionDisplayOffset(direction: Direction | undefined): { x: string; y: string } | null {
+  if (!direction) return null;
+
+  return {
+    x: `${direction.delta.col}px`,
+    y: `${direction.delta.row}px`,
   }
 }
 
-export function getSwapDirection(a: Cell, b: Cell): Direction | null {
-  const dx = b.col - a.col;
-  const dy = b.row - a.row;
+export function getSwapDirection(a: Position, b: Position): Direction | null {
+  const delta = new Position(b.row - a.row, b.col - a.col);
 
-  console.log("getSwapDirection", dx, dy, a, b);
+  for (const dir of Object.values(Directions)) {
+    if (dir.delta.equals(delta)) {
+      return dir;
+    }
+  }
+  return null;
+}
 
-  if (dx === 1 && dy === 0) return Direction.RIGHT;
-  if (dx === -1 && dy === 0) return Direction.LEFT;
-  if (dx === 0 && dy === 1) return Direction.DOWN;
-  if (dx === 0 && dy === -1) return Direction.UP;
-
-  return null; // not adjacent
+export function movePosition(pos: Position, dirName: Dir, steps = 1): Position {
+  const dir = Directions[dirName];
+  return pos.add(dir.delta.multiply(steps));
 }

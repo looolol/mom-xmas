@@ -1,123 +1,144 @@
 import {Injectable} from '@angular/core';
-import {BehaviorSubject} from 'rxjs';
-import {BoardConfig, BoardState} from '../models/board.model';
+import {BehaviorSubject, map} from 'rxjs';
+import {BoardConfig} from '../models/board.model';
 import {BoardService} from './board.service';
 import {Cell} from '../models/cell.model';
-import {getIndex} from '../utils/board.utils';
+import {POINTS_PER_CELL} from '../utils/constants';
+import {GamePhase, gameModel} from '../models/game.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class GameService {
 
+  private readonly _phase$ = new BehaviorSubject<GamePhase>(GamePhase.Uninitialized);
+  readonly phase$ = this._phase$.asObservable();
+
   private readonly _score$ = new BehaviorSubject<number>(0);
   readonly score$ = this._score$.asObservable();
 
-  private board: BoardState | null = null;
+  readonly canInteract$ = this.phase$.pipe(
+    map(phase => phase === GamePhase.Idle)
+  );
 
-  constructor(private boardService: BoardService) {
-    this.boardService.board$.subscribe(board => {
-      console.log('board updated', board);
-      this.board = board;
-    });
+
+  constructor(private boardService: BoardService) { }
+
+
+  private setPhase(next: GamePhase) {
+    const phase = this._phase$.getValue();
+    if (!gameModel(phase, next)) {
+      throw new Error(`Invalid phase transition: ${phase} → ${next}`);
+    }
+    console.log('Changing phase', next);
+    this._phase$.next(next);
+  }
+
+  get score(): number {
+    return this._score$.getValue();
+  }
+
+  set score(value: number) {
+    this._score$.next(value);
+  }
+
+  addScore(matches: Cell[]) {
+    this.score = this.score + matches.length * POINTS_PER_CELL;
   }
 
   async startGame(config: BoardConfig) {
+    console.log('Starting game...');
+    this.setPhase(GamePhase.Uninitialized);
+    console.log('Initialized board...');
     this.boardService.initBoard(config);
-    this._score$.next(10);
-    console.log("Game started", this._score$.value);
+    this._score$.next(0);
+    this.setPhase(GamePhase.Idle);
+    console.log('Resolving initial board...');
+    await this.resolveMatches();
   }
 
-  async playerSwap(cellA: Cell, cellB: Cell): Promise<boolean> {
-    if (!this.board) return false;
-
-    console.log("performing swap");
-    // Perform swap animation
-    await this.boardService.animateSwap(cellA, cellB);
-
-    // Detect matches
-    const matches = this.detectMatches();
-    if (matches.length === 0) {
-      // No matches: swap back
-      await this.boardService.animateSwap(cellA, cellB);
+  async playerSwap(a: Cell, b: Cell): Promise<boolean> {
+    if (this._phase$.getValue() !== GamePhase.Idle){
+      console.warn("Can't swap, phase is " + this._phase$.getValue());
       return false;
     }
 
-    // Handle matches and subsequent refills
-    await this.handleMatches(matches);
+    const board = this.boardService.board;
+    if (!board) return false;
+
+    this.setPhase(GamePhase.Swapping);
+    try {
+      await this.boardService.animateSwap(a, b);
+    } catch (error) {
+      console.error('Swap animation failed:', error);
+      this.boardService.updateBoard(board);
+      this.setPhase(GamePhase.Idle);
+      return false;
+    }
+
+    console.log('Swap animation complete:', board);
+    const swappedBoard = this.boardService.board;
+    if (!swappedBoard) {
+      console.error('Board state missing after swap animation');
+      this.setPhase(GamePhase.Idle);
+      return false;
+    }
+
+    const matches = this.boardService.detectMatches(swappedBoard);
+    if (matches.length === 0) {
+      console.log('Swap did not match!');
+      const swappedA = swappedBoard.getCell(a.pos);
+      const swappedB = swappedBoard.getCell(b.pos);
+
+      if (!swappedA || !swappedB) {
+        console.error('Could not find swapped cells to revert swap');
+        this.setPhase(GamePhase.Idle);
+        return false;
+      }
+      console.log('Swapped cells', swappedA, swappedB);
+
+      // swap back
+      try {
+        await this.boardService.animateSwap(swappedA, swappedB);
+      } catch (error) {
+        console.error('Swap back animation failed:', error);
+      }
+      console.log('Animation done, updating board');
+      this.boardService.updateBoard(board);
+      console.log('Setting phase back to idle');
+      this.setPhase(GamePhase.Idle);
+      return false;
+    }
+
+    this.setPhase(GamePhase.Idle);
+    await this.resolveMatches(matches);
     return true;
   }
 
-  detectMatches(): Cell[] {
-    if (!this.board) return [];
+  private async resolveMatches(startingMatches?: Cell[]): Promise<void> {
+    let matches = startingMatches ?? this.boardService.detectMatches();
 
-    const matchedCells = new Set<Cell>();
-    const { rows, cols, cells } = this.board;
-
-    const getCell = (row: number, col: number): Cell | undefined => {
-      if (row < 0 || row >= rows || col < 0 || col >= cols) return undefined;
-      return cells[getIndex(row, col, cols)];
-    };
-
-    const findMatchesInDirection = (
-      outerLength: number,
-      innerLength: number,
-      getRow: (outer: number, inner: number) => number,
-      getCol: (outer: number, inner: number) => number
-    ) => {
-      for (let outer = 0; outer < outerLength; outer++) {
-        let matchStart = 0;
-        for (let inner = 1; inner <= innerLength; inner++) {
-          const prevCell = getCell(getRow(outer, inner - 1), getCol(outer, inner - 1));
-          const cell = getCell(getRow(outer, inner), getCol(outer, inner));
-
-          if (
-            cell && prevCell &&
-            cell.symbol && prevCell.symbol &&
-            cell.symbol.kind === prevCell.symbol.kind
-          ) {
-            continue;
-          }
-
-          const runLength = inner - matchStart;
-          if (runLength >= 3) {
-            for (let i = matchStart; i < inner; i++) {
-              const matchedCell = getCell(getRow(outer, i), getCol(outer, i));
-              if (matchedCell) matchedCells.add(matchedCell);
-            }
-          }
-          matchStart = inner;
-        }
+    while (matches.length > 0) {
+      this.setPhase(GamePhase.ResolvingMatches);
+      try {
+        await this.boardService.animateClear(matches);
+      } catch (error) {
+        console.error('Clear animation failed:', error);
       }
-    };
+      this.boardService.updateBoard(this.boardService.clearCells(this.boardService.board!, matches));
 
-    // Horizontal matches: rows = outerLength, cols = innerLength
-    findMatchesInDirection(rows, cols,
-      (row, col) => row,
-      (row, col) => col);
+      this.addScore(matches);
 
-    // Vertical matches: cols = outerLength, rows = innerLength
-    findMatchesInDirection(cols, rows,
-      (col, row) => row,
-      (col, row) => col);
+      this.setPhase(GamePhase.ResolvingDrop);
+      this.boardService.updateBoard(this.boardService.dropAndFillColumns(this.boardService.board!));
 
-    return Array.from(matchedCells);
-  }
+      this.setPhase(GamePhase.Filling);
+      // await optional drops/fills
 
-
-
-  async handleMatches(matches: Cell[]) {
-    if (!this.board) return;
-
-    // Animate clearing matched cells
-    await this.boardService.animateClear(matches);
-    await this.boardService.dropAndFill();
-    const newMatches = this.detectMatches();
-    if (newMatches.length > 0) {
-      await this.handleMatches(newMatches);
+      matches = this.boardService.detectMatches(this.boardService.board);
+      console.log('Matches found:', matches.length);
     }
 
-    // Update score based on matches count (ex)
-    this._score$.next(this._score$.getValue() + matches.length * 10);
+    this.setPhase(GamePhase.Idle);
   }
 }

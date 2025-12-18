@@ -23,6 +23,8 @@ export class BoardComponent implements OnInit, OnDestroy {
   board: BoardState | null = null;
   score: number = 0;
 
+  selectedCell: Cell | null = null;
+
   private destroy$ = new Subject<void>();
 
 
@@ -48,6 +50,7 @@ export class BoardComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+
   get board$() {
     return this.boardService.board$;
   }
@@ -56,38 +59,67 @@ export class BoardComponent implements OnInit, OnDestroy {
     return this.gameService.score$;
   }
 
-  trackByCell(idx: number, cell: Cell) {
-    return cell.index;
-  }
-
-  testDropSymbol(col: number) {
-    this.boardService.animateDrop(col, 3);
-  }
-
-  testSwap() {
-    if (!this.board) return;
-
-    const cellA = this.board.cells[0];
-    const cellB = this.board.cells[1];
-
-    this.onPlayerSwap(cellA, cellB);
+  get phase$() {
+    return this.gameService.phase$;
   }
 
   async onPlayerSwap(cellA: Cell, cellB: Cell) {
     console.log('onPlayerSwap', cellA, cellB);
     const success = await this.gameService.playerSwap(cellA, cellB);
     if (!success) {
-      // optionall show some message or animation for invalid swap
+      // optional show some message or animation for invalid swap
+      // snackbar or toast?
+      console.warn('Invalid swap!');
     }
   }
 
-
-  testClearMatch() {
+  async onCellClick(cell: Cell) {
     if (!this.board) return;
 
-    const matchCells = this.board.cells.slice(0, 3);
-    this.boardService.animateClear(matchCells);
+    if (!this.gameService.canInteract$) {
+      console.warn('Cannot swap right now, game is busy');
+      return;
+    }
+
+
+    // No cell selected
+    if (!this.selectedCell) {
+      this.selectedCell = cell;
+      return;
+    }
+
+    // If same cell clicked, deselect
+    if (this.selectedCell.index === cell.index) {
+      this.selectedCell = null;
+      return;
+    }
+
+    // Check if the two cells are adjacent (horizontal or vertical neighbors)
+    const adj = this.selectedCell.isAdjacent(cell);
+    console.log("adj", adj);
+    if (!this.selectedCell.isAdjacent(cell)) {
+      // replace with newly selected cell
+      this.selectedCell = cell;
+      return;
+    }
+
+    // Attempt swap
+    console.log("swapping cells", this.selectedCell, cell);
+    await this.onPlayerSwap(this.selectedCell, cell);
+
+    // clear selection after swap attempt
+    this.selectedCell = null;
   }
+
+
+  trackByCell(idx: number, cell: Cell) {
+    return cell.index;
+  }
+
+  isSelected(cell: Cell): boolean {
+    return this.selectedCell?.index === cell.index;
+  }
+
 
   protected readonly TILE_SIZE_PX = TILE_SIZE_PX;
 }

@@ -24,8 +24,8 @@ export const swapAnimation = trigger('swap', [
   state(AnimationMode.None, style({ transform: 'translate(0, 0)' })),
 
   transition(AnimationMode.None + " => " + AnimationMode.Swapping, [
-    animate('300ms ease-in-out', style({ transform: 'translate({{x}}px, {{y}}px'}))
-  ]),
+    animate('300ms ease-in-out', style({ transform: 'translate({{x}}, {{y}}'}))
+  ], { params: { x: 0, y: 0 }}),
 
   transition(AnimationMode.Swapping + " => " + AnimationMode.None, [
     animate('300ms ease-in-out', style({ transform: 'translate(0, 0)'}))

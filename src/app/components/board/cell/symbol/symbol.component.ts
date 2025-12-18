@@ -3,10 +3,10 @@ import {SymbolModel} from '../../../../models/symbol.model';
 import {TILE_SIZE_PX} from '../../../../utils/constants';
 import {clearingAnimation, dropAnimation, swapAnimation} from '../../../../animations/symbol.animations';
 import {AnimationEvent} from '@angular/animations';
-import {directionToOffset} from '../../../../models/direction.model';
 import {AnimationMode} from '../../../../models/animation.model';
 import {AnimationService} from '../../../../services/animation.service';
 import {CommonModule} from '@angular/common';
+import {getDirectionDisplayOffset} from '../../../../models/direction.model';
 
 
 @Component({
@@ -25,14 +25,24 @@ export class SymbolComponent {
   constructor(private animationService: AnimationService) { }
 
   onAnimationStart(event: AnimationEvent) {
+    const { triggerName, fromState, toState } = event;
+    console.log(`Animation started: trigger=${triggerName}, from=${fromState}, to=${toState}, symbolId=${this.symbol.id}`);
   }
 
   onAnimationDone(event: AnimationEvent) {
-    if (event.toState === AnimationMode.None) return;
-    this.animationService.finishAnimation(this.symbol);
+    const { triggerName, fromState, toState } = event;
+    console.log(`Animation done: trigger=${triggerName}, from=${fromState}, to=${toState}, symbolId=${this.symbol.id}`);
+
+    // Only call finishAnimation when the animation transitions TO the 'None' state,
+    // which means the animation cycle is fully done.
+    // if (['swap', 'clearing'].includes(fromState) && toState === AnimationMode.None) {
+      console.log(`Calling finishAnimation: trigger=${triggerName}, from=${fromState}, to=${toState}, symbolId=${this.symbol.id}`);
+      this.animationService.finishAnimation(this.symbol);
+    // }
   }
+
 
   protected readonly TILE_SIZE_PX = TILE_SIZE_PX;
   protected readonly AnimationMode = AnimationMode;
-  protected readonly directionToOffset = directionToOffset;
+  protected readonly getDirectionDisplayOffset = getDirectionDisplayOffset;
 }

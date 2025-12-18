@@ -20,6 +20,7 @@ export type AnimationDoneEvent = {
 
 export type AnimationCallback = () => void;
 
+
 export interface SymbolAnimationRequest {
   mode: AnimationMode;
   symbol: SymbolModel;

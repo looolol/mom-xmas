@@ -1,5 +1,5 @@
 import {Component, Input} from '@angular/core';
-import {Cell, CellTypeEnum} from '../../../models/cell.model';
+import {Cell, CellType} from '../../../models/cell.model';
 import {CommonModule} from '@angular/common';
 import {SymbolComponent} from './symbol/symbol.component';
 
@@ -16,5 +16,5 @@ export class CellComponent {
 
   @Input() cell!: Cell;
 
-  protected readonly CellTypeEnum = CellTypeEnum;
+  protected readonly CellTypeEnum = CellType;
 }
