@@ -5,10 +5,16 @@ import {Cell, CellType} from '../models/cell.model';
 import {randomSymbolExcluding} from '../utils/random-symbol';
 import {MATCH_CHECK_DEPTH} from '../utils/constants';
 import {AnimationService} from './animation.service';
-import {AnimationMode} from '../models/animation.model';
 import {Position} from '../models/position.model';
+import {
+  Dir,
+  getDirectionDelta,
+  getDirectionDisplayOffset,
+  getOppositeDirection,
+  getSwapDirection
+} from '../models/direction.model';
+import {AnimationRenderMode, AnimationType} from '../models/animation.model';
 import {createSymbol} from '../models/symbol.model';
-import {Dir, getDirectionDelta, getOppositeDirection, getSwapDirection} from '../models/direction.model';
 
 @Injectable({
   providedIn: 'root'
@@ -68,6 +74,10 @@ export class BoardService {
     return new BoardState(board.rows, board.cols, newCells);
   }
 
+  /**
+   * --- Board State Mutations ---
+   */
+
   swapCells(board: BoardState, a: Cell, b: Cell): BoardState {
     const newCells = board.cells.map(cell => {
       if (cell.pos.equals(a.pos)) return cell.withSymbol(b.symbol);
@@ -112,63 +122,94 @@ export class BoardService {
   }
 
 
-  // --- ANIMATION METHODS ---
+  /**
+   * --- Animation Methods ---
+   */
 
-  async animateSwap(a: Cell, b: Cell): Promise<void> {
-    if (!a.symbol || !b.symbol || !this.animationService.canAnimate(a.symbol, b.symbol)) {
-      console.log('Cannot animate swap', a.symbol, b.symbol, this.animationService.isAnimating?.valueOf());
-      return;
+  async animateSwap(a: Cell, b: Cell): Promise<boolean> {
+    if (!a.symbol || !b.symbol) return false;
+    if (this.animationService.isAnimating()) {
+      console.warn('Animation in progress, skipping swap animation');
+      return false;
     }
 
     const dir = getSwapDirection(a.pos, b.pos);
-    if (!dir) return;
+    if (!dir) return false;
 
-    console.log(`Starting swap animation from ${a.pos} <-> ${b.pos}`);
-    await this.animationService.runPairedAnimation(
-      a.symbol,
-      b.symbol,
-      { symbol: a.symbol, mode: AnimationMode.Swapping, params: { swapDirection: dir } },
-      { symbol: b.symbol, mode: AnimationMode.Swapping, params: { swapDirection: getOppositeDirection(dir) } }
+    console.log(`Starting swap animation from ${a.pos.row},${a.pos.col} (symbol ${a.symbol.id}) <-> ${b.pos.row},${b.pos.col} (symbol ${b.symbol.id})`);
+
+    const swapDir = getSwapDirection(a.pos, b.pos);
+    const oppositeDir = getOppositeDirection(swapDir);
+    const offset = getDirectionDisplayOffset(swapDir);
+    const oppositeOffset = getDirectionDisplayOffset(oppositeDir);
+
+    await this.animationService.play(
+      AnimationType.Swapping,
+      [
+        {
+          symbolId: a.symbol.id,
+          renderMode: AnimationRenderMode.Swapping,
+          params: {
+            x: offset?.x ?? '0px',
+            y: offset?.y ?? '0px',
+          }
+        },
+        {
+          symbolId: b.symbol.id,
+          renderMode: AnimationRenderMode.Swapping,
+          params: {
+            x: oppositeOffset?.x ?? '0px',
+            y: oppositeOffset?.y ?? '0px', }
+        }
+      ]
     );
-    console.log(`Finished swap animation from ${a.pos} <-> ${b.pos}`);
 
-    this.updateBoard(this.swapCells(this.board!, a, b));
+    console.log(`Finished swap animation from ${a.pos.row},${a.pos.col} <-> ${b.pos.row},${b.pos.col}`);
+    return true;
   }
 
   async animateClear(matchCells: Cell[]): Promise<void> {
-    const cellsToClear = matchCells.filter(
-      cell => cell.symbol && this.animationService.canAnimate(cell.symbol)
-    );
+    if (this.animationService.isAnimating()) {
+      console.warn('Animation in progress, skipping clear animation');
+      return;
+    }
 
-    if (cellsToClear.length === 0) return;
+    const animCells = matchCells.filter(cell => cell.symbol);
 
-    await Promise.all(
-      cellsToClear.map(cell =>
-        this.animationService.startAnimationAsync({
-          symbol: cell.symbol!,
-          mode: AnimationMode.Clearing,
-        })
-      )
+    if (animCells.length === 0) return;
+
+    await this.animationService.play(
+      AnimationType.Clearing,
+      animCells.map(cell => ({
+        symbolId: cell.symbol!.id,
+        renderMode: AnimationRenderMode.Clearing,
+      }))
     );
 
     console.log('Clearing animation done for all matched cells, waiting 100ms before clearing symbols...');
     await new Promise(resolve => setTimeout(resolve, 100));
-
-    this.updateBoard(this.clearCells(this.board!, cellsToClear));
   }
 
   async animateDrop(col: number, fallingFrom: number): Promise<void> {
     const board = this.board;
     if (!board) return;
 
-    const cell = board.cells.find(c => c.pos.col === col && c.symbol);
-    if (!cell || !cell.symbol || !this.animationService.canAnimate(cell.symbol)) return;
+    if (this.animationService.isAnimating()) {
+      console.warn('Animation in progress, skipping clear animation');
+      return;
+    }
 
-    await this.animationService.startAnimationAsync({
-      symbol: cell.symbol,
-      mode: AnimationMode.Falling,
-      params: {fallingFrom},
-    });
+    const columnCells = board.getColumn(col).filter(c => c.symbol);
+    if (columnCells.length === 0) return;
+
+    await this.animationService.play(
+      AnimationType.Falling,
+      columnCells.map(cell => ({
+        symbolId: cell.symbol!.id,
+        renderMode: AnimationRenderMode.Falling,
+        params: { fallingFrom }
+      }))
+    );
   }
 
   // -- OTHER METHODS ----
@@ -216,7 +257,7 @@ export class BoardService {
 
       const prevPos = cell.pos.add(delta.multiply(-1));
       const prevCell = board.getCell(prevPos);
-      if (prevCell?.getSymbolKind() === cell.symbol.getKind()) continue;
+      if (prevCell?.getSymbolKind() === cell.symbol.kind) continue;
 
       const runLength = board.getRunLength(cell.pos, delta);
 

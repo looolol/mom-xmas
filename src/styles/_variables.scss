@@ -1,8 +1,11 @@
 $tile-size-px: 48px;
 $symbol-font-size-px: 28px;
+$cell-border-radius-px: 6px;
+
 $board-bg-color: #1e1e2f;
 $cell-bg-color: #28293d;
 $cell-blocked-color: #11111f;
-$cell-border-radius-px: 6px;
+$cell-shadow-color: #3c3c54;
+
 $symbol-transition-easing: ease;
 $falling-animation-duration-ms: 400ms;

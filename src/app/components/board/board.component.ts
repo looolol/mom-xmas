@@ -8,6 +8,8 @@ import {TILE_SIZE_PX} from '../../utils/constants';
 import {BoardState} from '../../models/board.model';
 import {Subject, takeUntil} from 'rxjs';
 import {GameService} from '../../services/game.service';
+import {AnimationService} from '../../services/animation.service';
+import {SymbolAnimation} from '../../models/animation.model';
 
 @Component({
   selector: 'app-board',
@@ -24,25 +26,34 @@ export class BoardComponent implements OnInit, OnDestroy {
   score: number = 0;
 
   selectedCell: Cell | null = null;
+  symbolAnimations: SymbolAnimation[] = [];
 
   private destroy$ = new Subject<void>();
 
 
   constructor(
-    private boardService: BoardService,
     private gameService: GameService,
+    private boardService: BoardService,
+    private animationService: AnimationService,
   ) { }
 
   ngOnInit() {
     this.gameService.startGame(LEVEL_1.board);
 
+    this.gameService.score$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(score => this.score = score);
+
     this.boardService.board$
       .pipe(takeUntil(this.destroy$))
       .subscribe(board => this.board = board);
 
-    this.gameService.score$
+    this.animationService.symbolAnimation$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(score => this.score = score);
+      .subscribe(anims => {
+        this.symbolAnimations = anims
+        console.log('Received animations:', anims);
+      });
   }
 
   ngOnDestroy() {
@@ -118,6 +129,10 @@ export class BoardComponent implements OnInit, OnDestroy {
 
   isSelected(cell: Cell): boolean {
     return this.selectedCell?.index === cell.index;
+  }
+
+  getAnimationForSymbol(symbolId: string): SymbolAnimation | null {
+    return this.symbolAnimations.find(a => a.symbolId === symbolId) ?? null;
   }
 
 

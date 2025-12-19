@@ -35,7 +35,8 @@ export const Directions: Record<Dir, Direction> = {
   [Dir.RIGHT]: new Direction(Dir.RIGHT, new Position(0, 1), Dir.LEFT)
 }
 
-export function getOppositeDirection(direction: Direction): Direction {
+export function getOppositeDirection(direction: Direction | undefined): Direction | undefined {
+  if (!direction) return undefined;
   return Directions[direction.opposite];
 }
 
@@ -43,16 +44,16 @@ export function getDirectionDelta(dir: Dir): Position {
   return Directions[dir].delta;
 }
 
-export function getDirectionDisplayOffset(direction: Direction | undefined): { x: string; y: string } | null {
-  if (!direction) return null;
+export function getDirectionDisplayOffset(direction: Direction | undefined): { x: string; y: string } | undefined {
+  if (!direction) return undefined;
 
   return {
-    x: `${direction.delta.col}px`,
-    y: `${direction.delta.row}px`,
+    x: `${direction.displayOffset.col}px`,
+    y: `${direction.displayOffset.row}px`,
   }
 }
 
-export function getSwapDirection(a: Position, b: Position): Direction | null {
+export function getSwapDirection(a: Position, b: Position): Direction | undefined {
   const delta = new Position(b.row - a.row, b.col - a.col);
 
   for (const dir of Object.values(Directions)) {
@@ -60,7 +61,7 @@ export function getSwapDirection(a: Position, b: Position): Direction | null {
       return dir;
     }
   }
-  return null;
+  return undefined;
 }
 
 export function movePosition(pos: Position, dirName: Dir, steps = 1): Position {

@@ -5,5 +5,9 @@
     'null': cell.type === CellTypeEnum.Null,
   }"
 >
-  <app-symbol *ngIf="cell.symbol" [symbol]="cell.symbol"></app-symbol>
+  <app-symbol
+    *ngIf="cell.symbol"
+    [symbol]="cell.symbol"
+    [animation]="animation"
+  ></app-symbol>
 </div>

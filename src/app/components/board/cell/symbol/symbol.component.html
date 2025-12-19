@@ -1,27 +1,24 @@
 <div
   class="symbol"
   [@drop]="{
-    value: symbol.animationMode === AnimationMode.Falling ? AnimationMode.Falling : AnimationMode.Landing,
-    params: { offset: '-' + ((symbol.fallingFrom + 1) * TILE_SIZE_PX) + 'px' }
+    value: renderMode === AnimationRenderMode.Falling ? AnimationRenderMode.Falling : AnimationRenderMode.None,
+    params: params
   }"
   [@swap]="{
-    value: symbol.animationMode === AnimationMode.Swapping ? AnimationMode.Swapping : AnimationMode.None,
-    params: getDirectionDisplayOffset(symbol.swapDirection) || { x: '0px', y: '0px' }
+    value: renderMode === AnimationRenderMode.Swapping ? AnimationRenderMode.Swapping : AnimationRenderMode.None,
+    params: params
   }"
   [@clearing]="{
-    value: symbol.animationMode === AnimationMode.Clearing ? AnimationMode.Clearing : AnimationMode.None,
+    value: renderMode === AnimationRenderMode.Clearing ? AnimationRenderMode.Clearing : AnimationRenderMode.None
   }"
-  (@drop.start)="onAnimationStart($event)"
-  (@drop.done)="onAnimationDone($event)"
-  (@swap.start)="onAnimationStart($event)"
-  (@swap.done)="onAnimationDone($event)"
-  (@clearing.start)="onAnimationStart($event)"
-  (@clearing.done)="onAnimationDone($event)"
+  (@drop.done)="onAnimationDone()"
+  (@swap.done)="onAnimationDone()"
+  (@clearing.done)="onAnimationDone()"
 >
 
   {{ symbol.kind }}
 
-  <div class="flash-overlay-star-wrapper" *ngIf="symbol.animationMode === AnimationMode.Clearing">
+  <div class="flash-overlay-star-wrapper" *ngIf="renderMode === AnimationRenderMode.Clearing">
     <div class="flash-overlay-star-white"></div>
     <div class="flash-overlay-star-gradient"></div>
   </div>

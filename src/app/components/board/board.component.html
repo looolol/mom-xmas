@@ -14,6 +14,7 @@
     <app-cell
       *ngFor="let cell of board.cells; trackBy: trackByCell"
       [cell]="cell"
+      [animation]="cell.symbol ? getAnimationForSymbol(cell.symbol.id) : null"
       (click)="onCellClick(cell)"
       [class.selected]="isSelected(cell)"
     >

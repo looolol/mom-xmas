@@ -1,10 +1,10 @@
-import {Injectable} from '@angular/core';
-import {BehaviorSubject, map} from 'rxjs';
-import {BoardConfig} from '../models/board.model';
-import {BoardService} from './board.service';
-import {Cell} from '../models/cell.model';
-import {POINTS_PER_CELL} from '../utils/constants';
-import {GamePhase, gameModel} from '../models/game.model';
+import { Injectable } from '@angular/core';
+import { BehaviorSubject, map } from 'rxjs';
+import { BoardConfig } from '../models/board.model';
+import { BoardService } from './board.service';
+import { Cell } from '../models/cell.model';
+import { POINTS_PER_CELL } from '../utils/constants';
+import { GamePhase, gameModel } from '../models/game.model';
 
 @Injectable({
   providedIn: 'root'
@@ -21,9 +21,7 @@ export class GameService {
     map(phase => phase === GamePhase.Idle)
   );
 
-
   constructor(private boardService: BoardService) { }
-
 
   private setPhase(next: GamePhase) {
     const phase = this._phase$.getValue();
@@ -49,96 +47,102 @@ export class GameService {
   async startGame(config: BoardConfig) {
     console.log('Starting game...');
     this.setPhase(GamePhase.Uninitialized);
-    console.log('Initialized board...');
+
     this.boardService.initBoard(config);
-    this._score$.next(0);
+    this.score = 0;
+
     this.setPhase(GamePhase.Idle);
-    console.log('Resolving initial board...');
+    console.log('Resolving initial matches on board...');
     await this.resolveMatches();
   }
 
+  /**
+   * Handles a player swap attempt.
+   * Returns true if the swap results in matches and is accepted.
+   * Returns false if no match or invalid phase.
+   */
   async playerSwap(a: Cell, b: Cell): Promise<boolean> {
-    if (this._phase$.getValue() !== GamePhase.Idle){
-      console.warn("Can't swap, phase is " + this._phase$.getValue());
-      return false;
-    }
+    if (this._phase$.getValue() !== GamePhase.Idle) return false;
 
     const board = this.boardService.board;
     if (!board) return false;
 
     this.setPhase(GamePhase.Swapping);
-    try {
-      await this.boardService.animateSwap(a, b);
-    } catch (error) {
-      console.error('Swap animation failed:', error);
+
+    // Animate the swap
+    const animated = await this.boardService.animateSwap(a, b);
+    if (!animated) {
+      // Revert board back if animation failed or skipped
       this.boardService.updateBoard(board);
       this.setPhase(GamePhase.Idle);
       return false;
     }
 
-    console.log('Swap animation complete:', board);
-    const swappedBoard = this.boardService.board;
-    if (!swappedBoard) {
-      console.error('Board state missing after swap animation');
-      this.setPhase(GamePhase.Idle);
-      return false;
-    }
+    // Update board state by swapping cells
+    const swappedBoard = this.boardService.swapCells(board, a, b);
+    this.boardService.updateBoard(swappedBoard);
 
+
+    // Check for matches on the swapped board
     const matches = this.boardService.detectMatches(swappedBoard);
     if (matches.length === 0) {
-      console.log('Swap did not match!');
-      const swappedA = swappedBoard.getCell(a.pos);
-      const swappedB = swappedBoard.getCell(b.pos);
+      // No matches: revert swap back visually and logically
+      await this.boardService.animateSwap(
+        swappedBoard.getCell(a.pos)!,
+        swappedBoard.getCell(b.pos)!,
+      );
 
-      if (!swappedA || !swappedB) {
-        console.error('Could not find swapped cells to revert swap');
-        this.setPhase(GamePhase.Idle);
-        return false;
-      }
-      console.log('Swapped cells', swappedA, swappedB);
-
-      // swap back
-      try {
-        await this.boardService.animateSwap(swappedA, swappedB);
-      } catch (error) {
-        console.error('Swap back animation failed:', error);
-      }
-      console.log('Animation done, updating board');
       this.boardService.updateBoard(board);
-      console.log('Setting phase back to idle');
       this.setPhase(GamePhase.Idle);
       return false;
     }
 
+    // Matches detected: resolve them
+    await this.resolveMatches();
     this.setPhase(GamePhase.Idle);
-    await this.resolveMatches(matches);
     return true;
   }
 
+
+  /**
+   * Resolves matches on the board: clears matches, drops symbols, fills empty cells, and repeats if new matches appear.
+   */
   private async resolveMatches(startingMatches?: Cell[]): Promise<void> {
     let matches = startingMatches ?? this.boardService.detectMatches();
 
     while (matches.length > 0) {
       this.setPhase(GamePhase.ResolvingMatches);
+
       try {
         await this.boardService.animateClear(matches);
       } catch (error) {
         console.error('Clear animation failed:', error);
       }
-      this.boardService.updateBoard(this.boardService.clearCells(this.boardService.board!, matches));
 
+      // Clear symbols from matched cells in the board state
+      const clearedBoard = this.boardService.clearCells(this.boardService.board!, matches);
+      this.boardService.updateBoard(clearedBoard);
+
+      // Add score based on matched cells
       this.addScore(matches);
 
+      // Drop symbols and fill new symbols
       this.setPhase(GamePhase.ResolvingDrop);
-      this.boardService.updateBoard(this.boardService.dropAndFillColumns(this.boardService.board!));
+      const droppedBoard = this.boardService.dropAndFillColumns(this.boardService.board!);
+      this.boardService.updateBoard(droppedBoard);
 
+      // Animate drops for each column (optional: tweak fallingFrom row)
       this.setPhase(GamePhase.Filling);
-      // await optional drops/fills
+      for (let col = 0; col < droppedBoard.cols; col++) {
+        await this.boardService.animateDrop(col, 0);
+      }
 
+      // Detect if new matches appear after drop/fill
       matches = this.boardService.detectMatches(this.boardService.board);
-      console.log('Matches found:', matches.length);
+      console.log(`Matches found after fill: ${matches.length}`);
     }
 
+    // No more matches to resolve
     this.setPhase(GamePhase.Idle);
   }
 }

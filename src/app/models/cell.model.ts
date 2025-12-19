@@ -23,8 +23,8 @@ export class Cell {
     return !!this.symbol;
   }
 
-  getSymbolKind(): string {
-    return this.symbol!.getKind();
+  getSymbolKind(): string | undefined {
+    return this.symbol?.kind;
   }
 
   withSymbol(symbolModel: SymbolModel | undefined): Cell {
