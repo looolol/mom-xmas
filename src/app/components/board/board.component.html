@@ -1,0 +1,18 @@
+<div *ngIf="score">
+  <span>Score: {{score}}</span>
+</div>
+
+<div *ngIf="board">
+  <div class="board"
+    [style.grid-template-rows]="'repeat(' + board.rows + ', ' + TILE_SIZE_PX +'px)'"
+    [style.grid-template-columns]="'repeat(' + board.cols + ', ' + TILE_SIZE_PX +'px)'"
+  >
+    <app-cell
+      *ngFor="let cell of board.cells; trackBy: trackByCell"
+      [cell]="cell"
+      (click)="onCellClick(cell)"
+      [class.selected]="isSelected(cell)"
+    >
+    </app-cell>
+  </div>
+</div>

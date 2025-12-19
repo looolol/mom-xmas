@@ -1,0 +1,12 @@
+<div
+  class="cell"
+  [ngClass]="{
+    'blocked': cell.type === CellTypeEnum.Blocked,
+    'null': cell.type === CellTypeEnum.Null,
+  }"
+>
+  <app-symbol
+    *ngIf="cell.symbol"
+    [symbol]="cell.symbol"
+  ></app-symbol>
+</div>

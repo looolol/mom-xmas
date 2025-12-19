@@ -1,0 +1,27 @@
+@use 'src/styles/variables' as *;
+
+.cell {
+  width: $tile-size-px;
+  height: $tile-size-px;
+  background-color: $cell-bg-color;
+  border-radius: $cell-border-radius-px;
+  box-shadow: inset 0 0 5px $cell-shadow-color;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: $symbol-font-size-px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.3s ease;
+}
+
+.cell.blocked {
+  background-color: $cell-blocked-color;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.cell.null {
+  background-color: transparent;
+  pointer-events: none;
+}

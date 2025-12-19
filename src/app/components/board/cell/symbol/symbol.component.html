@@ -1,0 +1,22 @@
+<div
+  class="symbol-transform"
+  [@motion]="{
+    value: motionState,
+    params: params
+  }"
+  (@motion.done)="onAnimationDone()"
+>
+  <div
+    class="symbol-visual"
+    [@clearing]="clearingState"
+    (@clearing.done)="onAnimationDone()"
+  >
+    {{ symbol.kind }}
+
+    <div class="flash-overlay-star-wrapper"
+         *ngIf="clearingState === AnimationRenderMode.Clearing">
+      <div class="flash-overlay-star-white"></div>
+      <div class="flash-overlay-star-gradient"></div>
+    </div>
+</div>
+</div>
