@@ -1,18 +1,16 @@
-<div *ngIf="score >= 0">
-    <span>Score: {{score}}</span>
-</div>
-
-<div *ngIf="board">
-  <div class="board"
-    [style.grid-template-rows]="'repeat(' + board.rows + ', ' + TILE_SIZE_PX +'px)'"
-    [style.grid-template-columns]="'repeat(' + board.cols + ', ' + TILE_SIZE_PX +'px)'"
-  >
-    <app-cell
-      *ngFor="let cell of board.cells; trackBy: trackByCell"
-      [cell]="cell"
-      (click)="onCellClick(cell)"
-      [class.selected]="isSelected(cell)"
+<div class="board-wrapper" *ngIf="board">
+    <mat-grid-list
+        [cols]="board.cols"
+        [rowHeight]="'1:1'"
+        gutterSize="4px"
+        class="board-grid"
     >
-    </app-cell>
-  </div>
+        <mat-grid-tile *ngFor="let cell of board.cells; trackBy: trackByCell">
+            <app-cell
+              [cell]="cell"
+              (click)="onCellClick(cell)"
+              [isSelected]="isSelected(cell)"
+            ></app-cell>
+        </mat-grid-tile>
+    </mat-grid-list>
 </div>

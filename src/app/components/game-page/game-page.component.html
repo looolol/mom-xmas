@@ -1,0 +1,23 @@
+<div class="game-container">
+
+  <header class="game-header">
+    <h1>Candy Crush Droid</h1>
+    <div class="score-display">Score: {{score}}</div>
+  </header>
+
+<!--  <section class="dialog-area" *ngIf="dialogMessage">{{dialogMessage}}</section>-->
+
+  <section class="sprite-area">
+    <!-- Droid/avatar component or image here -->
+<!--    <app-droid [state]="droidState"></app-droid>-->
+  </section>
+
+  <section class="board-area">
+    <app-board
+      [board]="board"
+      [selectedCellIndex]="selectedCell?.index ?? null"
+      (cellClick)="onCellClick($event)"
+    ></app-board>
+  </section>
+
+</div>

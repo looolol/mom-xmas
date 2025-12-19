@@ -1,19 +1,14 @@
 import {Level} from '../models/level.model';
 
+function generateLayout(number: number, number2: number) {
+  return [];
+}
+
 export const LEVEL_1: Level = {
   id: 'level1',
   board: {
-    rows: 8,
+    rows: 10,
     cols: 8,
-    layout: [
-      [0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0],
-     ]
+    layout: generateLayout(8, 10),
   }
 }
