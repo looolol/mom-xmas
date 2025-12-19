@@ -45,14 +45,12 @@ export class GameService {
   }
 
   async startGame(config: BoardConfig) {
-    console.log('Starting game...');
     this.setPhase(GamePhase.Uninitialized);
 
     this.boardService.initBoard(config);
     this.score = 0;
 
     this.setPhase(GamePhase.Idle);
-    console.log('Resolving initial matches on board...');
     await this.resolveMatches();
     this.setPhase(GamePhase.Idle);
   }
@@ -109,28 +107,26 @@ export class GameService {
    * Resolves matches on the board: clears matches, drops symbols, fills empty cells, and repeats if new matches appear.
    */
   private async resolveMatches(startingMatches?: Cell[]): Promise<void> {
-    console.log('Resolving matches...');
     let matches = startingMatches ?? this.boardService.detectMatches();
 
     while (matches.length > 0) {
       this.setPhase(GamePhase.ResolvingMatches);
-      console.log('Animating clear...');
       await this.boardService.animateClear(matches);
 
-      console.log('Updating Board...');
       const clearedBoard = this.boardService.clearCells(this.boardService.board!, matches);
       this.boardService.updateBoard(clearedBoard);
       this.addScore(matches);
 
       this.setPhase(GamePhase.ResolvingDrop);
       const droppedBoard = this.boardService.applyGravity(clearedBoard!);
-
-      this.setPhase(GamePhase.Filling);
       await this.boardService.animateDrop(clearedBoard, droppedBoard);
       this.boardService.updateBoard(droppedBoard);
 
+      this.setPhase(GamePhase.Filling);
+      const newSymbols = this.boardService.detectNewSymbols(clearedBoard, droppedBoard);
+      await this.boardService.animateCreate(newSymbols);
+
       matches = this.boardService.detectMatches(this.boardService.board);
-      console.log(`Matches found after fill: ${matches.length}`)
     }
   }
 }

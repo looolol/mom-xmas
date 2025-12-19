@@ -6,6 +6,7 @@ export enum AnimationMode {
   None = 'none',
   Move = 'move',
   Clearing = 'clearing',
+  Creating = 'creating',
 }
 
 export interface AnimationParams {

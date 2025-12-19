@@ -104,8 +104,6 @@ export class BoardService {
     const dir = getSwapDirection(a.pos, b.pos);
     if (!dir) return false;
 
-    console.log(`Starting swap animation from ${a.pos.row},${a.pos.col} (symbol ${a.symbol.id}) <-> ${b.pos.row},${b.pos.col} (symbol ${b.symbol.id})`);
-
     const swapDir = getSwapDirection(a.pos, b.pos);
     const oppositeDir = getOppositeDirection(swapDir);
     const offset = getDirectionDisplayOffset(swapDir);
@@ -131,7 +129,6 @@ export class BoardService {
       ]
     );
 
-    console.log(`Finished swap animation from ${a.pos.row},${a.pos.col} <-> ${b.pos.row},${b.pos.col}`);
     return true;
   }
 
@@ -146,8 +143,6 @@ export class BoardService {
         renderMode: AnimationMode.Clearing,
       }))
     );
-
-    console.log('Clearing animation done for all matched cells');
   }
 
   async animateDrop(oldBoard: BoardState, newBoard: BoardState): Promise<void> {
@@ -165,14 +160,12 @@ export class BoardService {
           const fallDistance = newRow - row;
           if (fallDistance <= 0) return null;
 
-          const yOffset = `${fallDistance * TILE_SIZE_PX}px`
-
           const animation: SymbolAnimation = {
             symbolId: oldCell.symbol.id,
             renderMode: AnimationMode.Move,
             params: {
               x: '0px',
-              y: yOffset,
+              y: `${fallDistance * TILE_SIZE_PX}px`,
             }
           };
           return animation;
@@ -180,7 +173,17 @@ export class BoardService {
         .filter((anim): anim is SymbolAnimation => anim !== null);
     });
 
-    console.log('Drop animations to play:', animations);
+    if (animations.length === 0) return;
+    await this.animationService.play(animations);
+  }
+
+  async animateCreate(newSymbols: Cell[]): Promise<void> {
+    const animations: SymbolAnimation[] = newSymbols.map(cell => ({
+      symbolId: cell.symbol!.id,
+      renderMode: AnimationMode.Creating,
+      params: {}
+    }));
+
     if (animations.length === 0) return;
     await this.animationService.play(animations);
   }
@@ -266,5 +269,19 @@ export class BoardService {
     }
 
     return newBoard;
+  }
+
+
+
+  detectNewSymbols(oldBoard: BoardState, newBoard: BoardState): Cell[] {
+    const oldSymbolIds = new Set<string>();
+
+    for (const cell of oldBoard.cells) {
+      if (cell.symbol) oldSymbolIds.add(cell.symbol.id);
+    }
+
+    return newBoard.cells.filter(cell => {
+      return cell.symbol && !oldSymbolIds.has(cell.symbol.id);
+    })
   }
 }

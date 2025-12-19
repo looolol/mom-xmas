@@ -22,12 +22,9 @@ export class AnimationService {
    * Resolves ONLY when all symbols have finished animating.
    */
   async play(animations: SymbolAnimation[]): Promise<void> {
-    console.log('Playing animation...', animations);
     if (this.activeTransaction) {
       await this.activeTransactionPromise;
     }
-
-    console.log('Play done waiting...');
 
     // Clear current animations so Angular detects change
     this._symbolAnimation$.next([]);
@@ -39,7 +36,6 @@ export class AnimationService {
       animations,
       completed: new Set<string>(),
     };
-    console.log('Starting animation...');
     this._isAnimating$.next(true);
 
     // Emit animations to the UI
@@ -69,7 +65,6 @@ export class AnimationService {
       return;
     }
 
-    console.log('Notify symbol done.', symbolId);
     tx.completed.add(symbolId);
 
     // If all symbols finished, resolve transaction
@@ -84,7 +79,6 @@ export class AnimationService {
   private async finishTransaction(): Promise<void> {
     if (!this.activeTransaction) return;
 
-    console.log("FINISHED ANIMATION TRANSACTION", this.activeTransaction);
     await new Promise(resolve => setTimeout(resolve, 100));
 
     // Clear state BEFORE resolving (prevents reentrancy bugs)

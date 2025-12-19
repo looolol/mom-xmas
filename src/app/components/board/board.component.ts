@@ -72,7 +72,6 @@ export class BoardComponent implements OnInit {
 
     // Check if the two cells are adjacent (horizontal or vertical neighbors)
     const adj = this.selectedCell.isAdjacent(cell);
-    console.log("adj", adj);
     if (!this.selectedCell.isAdjacent(cell)) {
       // replace with newly selected cell
       this.selectedCell = cell;
@@ -80,7 +79,6 @@ export class BoardComponent implements OnInit {
     }
 
     // Attempt swap
-    console.log("swapping cells", this.selectedCell, cell);
     await this.onPlayerSwap(this.selectedCell, cell);
 
     // clear selection after swap attempt
@@ -88,7 +86,6 @@ export class BoardComponent implements OnInit {
   }
 
    async onPlayerSwap(cellA: Cell, cellB: Cell) {
-    console.log('onPlayerSwap', cellA, cellB);
     const success = await this.gameService.playerSwap(cellA, cellB);
     if (!success) {
       // optional show some message or animation for invalid swap

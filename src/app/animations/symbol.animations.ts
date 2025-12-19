@@ -4,15 +4,29 @@ import {AnimationMode} from '../models/animation.model';
 
 export const motionAnimation = trigger('motion', [
   state(AnimationMode.None, style({
-    transform: 'translate(0, 0)'
+    transform: 'translate(0, 0) scale(1)'
   })),
 
   state(AnimationMode.Move, style({
-    transform: 'translate({{x}}, {{y}})',
+    transform: 'translate({{x}}, {{y}}) scale(1)',
   }), { params: { x: '0px', y: '0px' } }),
+
+  state(AnimationMode.Creating, style({
+    transform: 'translate(0, 0) scale(1)',
+    opacity: 1,
+  })),
 
   transition(`${AnimationMode.None} => ${AnimationMode.Move}`, animate('300ms ease-in-out')),
   transition(`${AnimationMode.Move} => ${AnimationMode.None}`, animate('0ms')),
+
+  transition(`${AnimationMode.None} => ${AnimationMode.Creating}`, [
+    style({ opacity: 0, transform: 'translate(0, 0) scale(0.5)' }),
+    animate('400ms ease-out', style({
+        opacity: 1,
+        transform: 'translate(0, 0) scale(1)', offset: 1
+    })),
+  ]),
+  transition(`${AnimationMode.Creating} => ${AnimationMode.None}`, animate('0ms')),
 ]);
 
 

@@ -39,15 +39,16 @@ export class SymbolComponent implements OnInit, OnDestroy {
 
   onAnimationDone(): void {
     if (!this.currentAnimation) return;
-    if (this.clearingState) console.log("Animation done, clearing state, symbol", this.symbol.id)
-    // if (!this.currentAnimation || this.currentAnimation.renderMode === AnimationMode.None) return;
     this.animationService.notifySymbolDone(this.symbol.id);
   }
 
   get motionState() {
-    return this.currentAnimation?.renderMode === AnimationMode.Move
-      ? AnimationMode.Move
-      : AnimationMode.None;
+    if (!this.currentAnimation) return AnimationMode.None;
+
+    if (this.currentAnimation.renderMode === AnimationMode.Move) return AnimationMode.Move;
+    if (this.currentAnimation.renderMode === AnimationMode.Creating) return AnimationMode.Creating;
+
+    return AnimationMode.None;
   }
 
   get clearingState() {
