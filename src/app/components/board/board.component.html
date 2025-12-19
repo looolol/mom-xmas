@@ -1,12 +1,8 @@
-<div *ngIf="score$ | async as score">
+<div *ngIf="score">
   <span>Score: {{score}}</span>
 </div>
 
-<div *ngIf="phase$ | async as score">
-  <span>Score: {{score}}</span>
-</div>
-
-<div *ngIf="board$ | async as board">
+<div *ngIf="board">
   <div class="board"
     [style.grid-template-rows]="'repeat(' + board.rows + ', ' + TILE_SIZE_PX +'px)'"
     [style.grid-template-columns]="'repeat(' + board.cols + ', ' + TILE_SIZE_PX +'px)'"
@@ -14,7 +10,6 @@
     <app-cell
       *ngFor="let cell of board.cells; trackBy: trackByCell"
       [cell]="cell"
-      [animation]="cell.symbol ? getAnimationForSymbol(cell.symbol.id) : null"
       (click)="onCellClick(cell)"
       [class.selected]="isSelected(cell)"
     >

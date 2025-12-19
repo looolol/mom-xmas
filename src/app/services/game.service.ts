@@ -54,6 +54,7 @@ export class GameService {
     this.setPhase(GamePhase.Idle);
     console.log('Resolving initial matches on board...');
     await this.resolveMatches();
+    this.setPhase(GamePhase.Idle);
   }
 
   /**
@@ -108,41 +109,28 @@ export class GameService {
    * Resolves matches on the board: clears matches, drops symbols, fills empty cells, and repeats if new matches appear.
    */
   private async resolveMatches(startingMatches?: Cell[]): Promise<void> {
+    console.log('Resolving matches...');
     let matches = startingMatches ?? this.boardService.detectMatches();
 
     while (matches.length > 0) {
       this.setPhase(GamePhase.ResolvingMatches);
+      console.log('Animating clear...');
+      await this.boardService.animateClear(matches);
 
-      try {
-        await this.boardService.animateClear(matches);
-      } catch (error) {
-        console.error('Clear animation failed:', error);
-      }
-
-      // Clear symbols from matched cells in the board state
+      console.log('Updating Board...');
       const clearedBoard = this.boardService.clearCells(this.boardService.board!, matches);
       this.boardService.updateBoard(clearedBoard);
-
-      // Add score based on matched cells
       this.addScore(matches);
 
-      // Drop symbols and fill new symbols
       this.setPhase(GamePhase.ResolvingDrop);
-      const droppedBoard = this.boardService.dropAndFillColumns(this.boardService.board!);
+      const droppedBoard = this.boardService.applyGravity(clearedBoard!);
+
+      this.setPhase(GamePhase.Filling);
+      await this.boardService.animateDrop(clearedBoard, droppedBoard);
       this.boardService.updateBoard(droppedBoard);
 
-      // Animate drops for each column (optional: tweak fallingFrom row)
-      this.setPhase(GamePhase.Filling);
-      for (let col = 0; col < droppedBoard.cols; col++) {
-        await this.boardService.animateDrop(col, 0);
-      }
-
-      // Detect if new matches appear after drop/fill
       matches = this.boardService.detectMatches(this.boardService.board);
-      console.log(`Matches found after fill: ${matches.length}`);
+      console.log(`Matches found after fill: ${matches.length}`)
     }
-
-    // No more matches to resolve
-    this.setPhase(GamePhase.Idle);
   }
 }

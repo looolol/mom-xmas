@@ -79,6 +79,14 @@ export class BoardState {
     return length;
   }
 
+  updateCells(updatedCells: Cell[]): BoardState {
+    const newCells = this.cells.map(cell => {
+      const updatedCell = updatedCells.find(c => c.pos.equals(cell.pos));
+      return updatedCell ?? cell;
+    });
+    return new BoardState(this.rows, this.cols, newCells);
+  }
+
   isValidPosition(pos: Position): boolean {
     return pos.row >= 0 && pos.row < this.rows && pos.col >= 0 && pos.col < this.cols;
   }

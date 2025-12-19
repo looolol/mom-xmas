@@ -3,7 +3,7 @@ import {BehaviorSubject} from 'rxjs';
 import {allPositions, BoardConfig, BoardState, getCellType} from '../models/board.model';
 import {Cell, CellType} from '../models/cell.model';
 import {randomSymbolExcluding} from '../utils/random-symbol';
-import {MATCH_CHECK_DEPTH} from '../utils/constants';
+import {MATCH_CHECK_DEPTH, TILE_SIZE_PX} from '../utils/constants';
 import {AnimationService} from './animation.service';
 import {Position} from '../models/position.model';
 import {
@@ -13,7 +13,7 @@ import {
   getOppositeDirection,
   getSwapDirection
 } from '../models/direction.model';
-import {AnimationRenderMode, AnimationType} from '../models/animation.model';
+import {AnimationMode, SymbolAnimation} from '../models/animation.model';
 import {createSymbol} from '../models/symbol.model';
 
 @Injectable({
@@ -94,44 +94,12 @@ export class BoardService {
     return new BoardState(board.rows, board.cols, clearedCells);
   }
 
-  dropAndFillColumns(board: BoardState): BoardState {
-    let newBoard = board;
-
-    for (let col = 0; col < board.cols; col++) {
-      const column = board.getColumn(col);
-
-      const symbols = column.map(c => c.symbol).filter(Boolean);
-      const missing = column.length - symbols.length;
-
-      const newSymbols = Array.from({length: missing}, () => createSymbol());
-      const finalSymbols = [...newSymbols, ...symbols];
-
-      const updatedCells = column.map((cell, i) =>
-        cell.withSymbol(finalSymbols[i] ?? undefined)
-      );
-
-      const newCells = newBoard.cells.map(cell => {
-        const updatedCell = updatedCells.find(c => c.pos.equals(cell.pos));
-        return updatedCell ?? cell;
-      });
-
-      newBoard = new BoardState(newBoard.rows, newBoard.cols, newCells);
-    }
-
-    return newBoard;
-  }
-
-
   /**
    * --- Animation Methods ---
    */
 
   async animateSwap(a: Cell, b: Cell): Promise<boolean> {
     if (!a.symbol || !b.symbol) return false;
-    if (this.animationService.isAnimating()) {
-      console.warn('Animation in progress, skipping swap animation');
-      return false;
-    }
 
     const dir = getSwapDirection(a.pos, b.pos);
     if (!dir) return false;
@@ -144,11 +112,10 @@ export class BoardService {
     const oppositeOffset = getDirectionDisplayOffset(oppositeDir);
 
     await this.animationService.play(
-      AnimationType.Swapping,
       [
         {
           symbolId: a.symbol.id,
-          renderMode: AnimationRenderMode.Swapping,
+          renderMode: AnimationMode.Move,
           params: {
             x: offset?.x ?? '0px',
             y: offset?.y ?? '0px',
@@ -156,7 +123,7 @@ export class BoardService {
         },
         {
           symbolId: b.symbol.id,
-          renderMode: AnimationRenderMode.Swapping,
+          renderMode: AnimationMode.Move,
           params: {
             x: oppositeOffset?.x ?? '0px',
             y: oppositeOffset?.y ?? '0px', }
@@ -169,47 +136,53 @@ export class BoardService {
   }
 
   async animateClear(matchCells: Cell[]): Promise<void> {
-    if (this.animationService.isAnimating()) {
-      console.warn('Animation in progress, skipping clear animation');
-      return;
-    }
-
     const animCells = matchCells.filter(cell => cell.symbol);
 
     if (animCells.length === 0) return;
 
     await this.animationService.play(
-      AnimationType.Clearing,
       animCells.map(cell => ({
         symbolId: cell.symbol!.id,
-        renderMode: AnimationRenderMode.Clearing,
+        renderMode: AnimationMode.Clearing,
       }))
     );
 
-    console.log('Clearing animation done for all matched cells, waiting 100ms before clearing symbols...');
-    await new Promise(resolve => setTimeout(resolve, 100));
+    console.log('Clearing animation done for all matched cells');
   }
 
-  async animateDrop(col: number, fallingFrom: number): Promise<void> {
-    const board = this.board;
-    if (!board) return;
+  async animateDrop(oldBoard: BoardState, newBoard: BoardState): Promise<void> {
+    const animations: SymbolAnimation[] = Array.from({ length: oldBoard.cols }).flatMap((_, col) => {
+      const oldCol = oldBoard.getColumn(col);
+      const newCol = newBoard.getColumn(col);
 
-    if (this.animationService.isAnimating()) {
-      console.warn('Animation in progress, skipping clear animation');
-      return;
-    }
+      return oldCol
+        .map((oldCell, row) => {
+          if (!oldCell.symbol) return null;
 
-    const columnCells = board.getColumn(col).filter(c => c.symbol);
-    if (columnCells.length === 0) return;
+          const newRow = newCol.findIndex(c => c.symbol?.id === oldCell.symbol!.id);
+          if (newRow === -1) return null;
 
-    await this.animationService.play(
-      AnimationType.Falling,
-      columnCells.map(cell => ({
-        symbolId: cell.symbol!.id,
-        renderMode: AnimationRenderMode.Falling,
-        params: { fallingFrom }
-      }))
-    );
+          const fallDistance = newRow - row;
+          if (fallDistance <= 0) return null;
+
+          const yOffset = `${fallDistance * TILE_SIZE_PX}px`
+
+          const animation: SymbolAnimation = {
+            symbolId: oldCell.symbol.id,
+            renderMode: AnimationMode.Move,
+            params: {
+              x: '0px',
+              y: yOffset,
+            }
+          };
+          return animation;
+        })
+        .filter((anim): anim is SymbolAnimation => anim !== null);
+    });
+
+    console.log('Drop animations to play:', animations);
+    if (animations.length === 0) return;
+    await this.animationService.play(animations);
   }
 
   // -- OTHER METHODS ----
@@ -273,5 +246,25 @@ export class BoardService {
     return matchedCells;
   }
 
+  applyGravity(board: BoardState): BoardState {
+    let newBoard = board;
 
+    for (let col = 0; col < board.cols; col++) {
+      const column = board.getColumn(col);
+
+      const symbols = column.filter(c => c.symbol).map(c => c.symbol!);
+
+      const missingCount = column.length - symbols.length;
+
+      const newSymbols = Array.from({ length: missingCount }, () => createSymbol());
+
+      const finalSymbols = [...newSymbols, ...symbols];
+
+      const updatedCells = column.map((cell, i) => cell.withSymbol(finalSymbols[i]));
+
+      newBoard = newBoard.updateCells(updatedCells);
+    }
+
+    return newBoard;
+  }
 }

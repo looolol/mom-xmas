@@ -1,9 +1,10 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {SymbolModel} from '../../../../models/symbol.model';
-import {clearingAnimation, dropAnimation, swapAnimation} from '../../../../animations/symbol.animations';
+import {clearingAnimation, motionAnimation,} from '../../../../animations/symbol.animations';
 import {CommonModule} from '@angular/common';
-import {AnimationParams, AnimationRenderMode, SymbolAnimation} from '../../../../models/animation.model';
+import {AnimationMode, AnimationParams, SymbolAnimation} from '../../../../models/animation.model';
 import {AnimationService} from '../../../../services/animation.service';
+import {Subscription} from 'rxjs';
 
 
 @Component({
@@ -13,27 +14,51 @@ import {AnimationService} from '../../../../services/animation.service';
   ],
   templateUrl: './symbol.component.html',
   styleUrl: './symbol.component.scss',
-  animations: [dropAnimation, swapAnimation, clearingAnimation],
+  animations: [motionAnimation, clearingAnimation],
 })
-export class SymbolComponent {
+export class SymbolComponent implements OnInit, OnDestroy {
   @Input() symbol!: SymbolModel;
-  @Input() animation: SymbolAnimation | null = null;
+
+  currentAnimation: SymbolAnimation | null = null;
+  private subscription?: Subscription;
+
 
   constructor(private animationService: AnimationService) { }
 
+  ngOnInit() {
+    this.subscription = this.animationService.symbolAnimation$.subscribe(animations => {
+      // Find animation for this symbol ID or null if none
+      this.currentAnimation = animations.find(a => a.symbolId === this.symbol.id) ?? null;
+    });
+  }
+
+  ngOnDestroy() {
+    this.subscription?.unsubscribe();
+  }
+
+
   onAnimationDone(): void {
-    if (!this.animation) return;
-    console.log('Animation done for symbol:', this.symbol.id, 'mode:', this.renderMode);
+    if (!this.currentAnimation) return;
+    if (this.clearingState) console.log("Animation done, clearing state, symbol", this.symbol.id)
+    // if (!this.currentAnimation || this.currentAnimation.renderMode === AnimationMode.None) return;
     this.animationService.notifySymbolDone(this.symbol.id);
   }
 
-  get renderMode(): AnimationRenderMode {
-    return this.animation?.renderMode ?? AnimationRenderMode.None;
+  get motionState() {
+    return this.currentAnimation?.renderMode === AnimationMode.Move
+      ? AnimationMode.Move
+      : AnimationMode.None;
+  }
+
+  get clearingState() {
+    return this.currentAnimation?.renderMode === AnimationMode.Clearing
+    ? AnimationMode.Clearing
+    : AnimationMode.None;
   }
 
   get params(): AnimationParams {
-    return this.animation?.params ?? {};
+    return this.currentAnimation?.params ?? {};
   }
 
-  protected readonly AnimationRenderMode = AnimationRenderMode;
+  protected readonly AnimationRenderMode = AnimationMode;
 }

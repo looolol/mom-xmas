@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import {AnimationTransaction, AnimationType, SymbolAnimation} from '../models/animation.model';
+import {Injectable} from '@angular/core';
+import {AnimationTransaction, SymbolAnimation} from '../models/animation.model';
 import {BehaviorSubject} from 'rxjs';
 
 @Injectable({
@@ -21,23 +21,25 @@ export class AnimationService {
    * Play a full animation transaction.
    * Resolves ONLY when all symbols have finished animating.
    */
-  async play(type: AnimationType, animations: SymbolAnimation[]): Promise<void> {
+  async play(animations: SymbolAnimation[]): Promise<void> {
+    console.log('Playing animation...', animations);
     if (this.activeTransaction) {
       await this.activeTransactionPromise;
     }
+
+    console.log('Play done waiting...');
 
     // Clear current animations so Angular detects change
     this._symbolAnimation$.next([]);
     await this.nextTick();
 
-    const tx: AnimationTransaction = {
+
+    this.activeTransaction = {
       id: crypto.randomUUID(),
-      type,
       animations,
       completed: new Set<string>(),
-    }
-
-    this.activeTransaction = tx;
+    };
+    console.log('Starting animation...');
     this._isAnimating$.next(true);
 
     // Emit animations to the UI
@@ -67,6 +69,7 @@ export class AnimationService {
       return;
     }
 
+    console.log('Notify symbol done.', symbolId);
     tx.completed.add(symbolId);
 
     // If all symbols finished, resolve transaction
@@ -78,8 +81,11 @@ export class AnimationService {
   /**
    * Clears the current transaction and resolves its Promise
    */
-  private finishTransaction(): void {
+  private async finishTransaction(): Promise<void> {
     if (!this.activeTransaction) return;
+
+    console.log("FINISHED ANIMATION TRANSACTION", this.activeTransaction);
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     // Clear state BEFORE resolving (prevents reentrancy bugs)
     this.activeTransaction = null;
@@ -102,11 +108,7 @@ export class AnimationService {
     return this._isAnimating$.getValue();
   }
 
-  getActiveTransactionType(): AnimationType | null {
-    return this.activeTransaction?.type ?? null;
-  }
-
-  private nextTick(): Promise<void> {
+  private async nextTick(): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, 10));
   }
 }

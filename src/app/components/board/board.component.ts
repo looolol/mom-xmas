@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {BoardService} from '../../services/board.service';
 import {LEVEL_1} from '../../levels/level1';
 import {CommonModule} from '@angular/common';
@@ -6,10 +6,8 @@ import {CellComponent} from './cell/cell.component';
 import {Cell} from '../../models/cell.model';
 import {TILE_SIZE_PX} from '../../utils/constants';
 import {BoardState} from '../../models/board.model';
-import {Subject, takeUntil} from 'rxjs';
 import {GameService} from '../../services/game.service';
-import {AnimationService} from '../../services/animation.service';
-import {SymbolAnimation} from '../../models/animation.model';
+import {GamePhase} from '../../models/game.model';
 
 @Component({
   selector: 'app-board',
@@ -20,78 +18,45 @@ import {SymbolAnimation} from '../../models/animation.model';
   templateUrl: './board.component.html',
   styleUrl: './board.component.scss'
 })
-export class BoardComponent implements OnInit, OnDestroy {
-
-  board: BoardState | null = null;
-  score: number = 0;
+export class BoardComponent implements OnInit {
 
   selectedCell: Cell | null = null;
-  symbolAnimations: SymbolAnimation[] = [];
 
-  private destroy$ = new Subject<void>();
+  board: BoardState | null = null;
+  score: number = -1;
+  phase: GamePhase = GamePhase.Uninitialized;
+  canInteract: boolean = false;
 
 
   constructor(
     private gameService: GameService,
     private boardService: BoardService,
-    private animationService: AnimationService,
   ) { }
 
+
   ngOnInit() {
+    this.boardService.board$.subscribe(board => {
+      this.board = board;
+    });
+
+    this.gameService.phase$.subscribe(phase => {
+      this.phase = phase;
+    });
+
+    this.gameService.score$.subscribe(score => {
+      this.score = score;
+    });
+
+    this.gameService.canInteract$.subscribe(canInteract => {
+      this.canInteract = canInteract;
+    });
+
     this.gameService.startGame(LEVEL_1.board);
-
-    this.gameService.score$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(score => this.score = score);
-
-    this.boardService.board$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(board => this.board = board);
-
-    this.animationService.symbolAnimation$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(anims => {
-        this.symbolAnimations = anims
-        console.log('Received animations:', anims);
-      });
   }
 
-  ngOnDestroy() {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-
-  get board$() {
-    return this.boardService.board$;
-  }
-
-  get score$() {
-    return this.gameService.score$;
-  }
-
-  get phase$() {
-    return this.gameService.phase$;
-  }
-
-  async onPlayerSwap(cellA: Cell, cellB: Cell) {
-    console.log('onPlayerSwap', cellA, cellB);
-    const success = await this.gameService.playerSwap(cellA, cellB);
-    if (!success) {
-      // optional show some message or animation for invalid swap
-      // snackbar or toast?
-      console.warn('Invalid swap!');
-    }
-  }
 
   async onCellClick(cell: Cell) {
-    if (!this.board) return;
-
-    if (!this.gameService.canInteract$) {
-      console.warn('Cannot swap right now, game is busy');
-      return;
-    }
-
+    if (!this.canInteract) return;
 
     // No cell selected
     if (!this.selectedCell) {
@@ -122,17 +87,23 @@ export class BoardComponent implements OnInit, OnDestroy {
     this.selectedCell = null;
   }
 
+   async onPlayerSwap(cellA: Cell, cellB: Cell) {
+    console.log('onPlayerSwap', cellA, cellB);
+    const success = await this.gameService.playerSwap(cellA, cellB);
+    if (!success) {
+      // optional show some message or animation for invalid swap
+      // snackbar or toast?
+      console.warn('Invalid swap!');
+    }
+  }
+
 
   trackByCell(idx: number, cell: Cell) {
     return cell.index;
   }
 
   isSelected(cell: Cell): boolean {
-    return this.selectedCell?.index === cell.index;
-  }
-
-  getAnimationForSymbol(symbolId: string): SymbolAnimation | null {
-    return this.symbolAnimations.find(a => a.symbolId === symbolId) ?? null;
+    return this.selectedCell?.index === cell.index && this.canInteract;
   }
 
 

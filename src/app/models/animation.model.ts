@@ -1,22 +1,10 @@
-import {Direction} from './direction.model';
-
-/**
- * High-level animation types understood by the GAME.
- */
-export enum AnimationType {
-  Swapping = 'swapping',
-  Falling = 'falling',
-  Clearing = 'clearing',
-}
-
 /**
  * Rendering modes used by the VIEW (Angular animations)
  * These map directly to animation triggers / states
  */
-export enum AnimationRenderMode {
+export enum AnimationMode {
   None = 'none',
-  Swapping = 'swapping',
-  Falling = 'falling',
+  Move = 'move',
   Clearing = 'clearing',
 }
 
@@ -28,7 +16,7 @@ export interface AnimationParams {
 
 export interface SymbolAnimation {
   symbolId: string;
-  renderMode: AnimationRenderMode;
+  renderMode: AnimationMode;
   params?: AnimationParams;
 }
 
@@ -41,11 +29,6 @@ export interface AnimationTransaction {
    *  Unique id for this animation transaction.
    */
   id: string;
-
-  /**
-   *  What kind of animation this represents
-   */
-  type: AnimationType;
 
   /**
    * All symbol animations involved in this transaction.

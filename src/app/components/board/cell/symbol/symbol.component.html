@@ -1,26 +1,22 @@
 <div
-  class="symbol"
-  [@drop]="{
-    value: renderMode === AnimationRenderMode.Falling ? AnimationRenderMode.Falling : AnimationRenderMode.None,
+  class="symbol-transform"
+  [@motion]="{
+    value: motionState,
     params: params
   }"
-  [@swap]="{
-    value: renderMode === AnimationRenderMode.Swapping ? AnimationRenderMode.Swapping : AnimationRenderMode.None,
-    params: params
-  }"
-  [@clearing]="{
-    value: renderMode === AnimationRenderMode.Clearing ? AnimationRenderMode.Clearing : AnimationRenderMode.None
-  }"
-  (@drop.done)="onAnimationDone()"
-  (@swap.done)="onAnimationDone()"
-  (@clearing.done)="onAnimationDone()"
+  (@motion.done)="onAnimationDone()"
 >
+  <div
+    class="symbol-visual"
+    [@clearing]="clearingState"
+    (@clearing.done)="onAnimationDone()"
+  >
+    {{ symbol.kind }}
 
-  {{ symbol.kind }}
-
-  <div class="flash-overlay-star-wrapper" *ngIf="renderMode === AnimationRenderMode.Clearing">
-    <div class="flash-overlay-star-white"></div>
-    <div class="flash-overlay-star-gradient"></div>
-  </div>
-
+    <div class="flash-overlay-star-wrapper"
+         *ngIf="clearingState === AnimationRenderMode.Clearing">
+      <div class="flash-overlay-star-white"></div>
+      <div class="flash-overlay-star-gradient"></div>
+    </div>
+</div>
 </div>

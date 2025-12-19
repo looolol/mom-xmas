@@ -2,7 +2,7 @@ import {Component, Input, OnChanges, SimpleChanges} from '@angular/core';
 import {Cell, CellType} from '../../../models/cell.model';
 import {CommonModule} from '@angular/common';
 import {SymbolComponent} from './symbol/symbol.component';
-import {AnimationRenderMode, SymbolAnimation} from '../../../models/animation.model';
+import {AnimationMode, SymbolAnimation} from '../../../models/animation.model';
 
 
 @Component({
