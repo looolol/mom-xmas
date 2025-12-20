@@ -1,14 +1,6 @@
 <div
-  class="cell"
-  [ngClass]="{
-    'blocked': cell.type === CellTypeEnum.Blocked,
-    'null': cell.type === CellTypeEnum.Null,
-  }"
->
-  <app-symbol
-    *ngIf="cell.symbol"
-    [symbol]="cell.symbol"
-  ></app-symbol>
-
-  <ng-container *ngIf="selected">SELECTED</ng-container>
-</div>
+    class="cell"
+    [class.blocoked]="cell.type === CellType.Blocked"
+    [class.null]="cell.type === CellType.Null"
+    [class.selected]="isSelected"
+></div>

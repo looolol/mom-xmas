@@ -1,16 +1,28 @@
 @use 'src/styles/variables' as *;
 
 .board-wrapper {
-  display: flex;
-  justify-content: center;
-  overflow: visible;
-  width: 95%;
-  max-width: 500px;
-  margin: 0 auto;
-  box-sizing: border-box;
+  display: inline-block;
+  max-width: 100%;
 }
 
-.board-grid {
-  width: 100%;
-  height: auto;  // height adjusts based on width to keep squares
+.board {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), var(--cell-size));
+  grid-template-rows: repeat(var(--rows), var(--cell-size));
+  gap: 4px;
+
+  position: relative;
+  max-width: 100%;
+  box-sizing: content-box;
+}
+
+app-cell {
+  position: relative;
+  z-index: 1;
+}
+
+app-symbol {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
 }

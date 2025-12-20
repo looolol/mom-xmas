@@ -1,16 +1,27 @@
-<div class="board-wrapper" *ngIf="board">
-    <mat-grid-list
-        [cols]="board.cols"
-        [rowHeight]="'1:1'"
-        gutterSize="4px"
-        class="board-grid"
+<div class="board-wrapper">
+    <div
+        class="board"
+        *ngIf="board"
+        [style.--cols]="board.cols"
+        [style.--rows]="board.rows"
+        [style.--cell-size.px]="cellSizePx"
     >
-        <mat-grid-tile *ngFor="let cell of board.cells; trackBy: trackByCell">
-            <app-cell
-              [cell]="cell"
-              (click)="onCellClick(cell)"
-              [isSelected]="isSelected(cell)"
-            ></app-cell>
-        </mat-grid-tile>
-    </mat-grid-list>
+        <!-- Grid cells (static layer) -->
+        <app-cell
+            *ngFor="let cell of board.cells; trackBy: trackByCell"
+            [cell]="cell"
+            [isSelected]="isSelected(cell)"
+            (click)="onCellClick(cell)"
+        ></app-cell>
+
+        <!-- Symbols (motion layer) -->
+        <ng-container *ngFor="let cell of board.cells; trackBy: trackByCell">
+            <app-symbol
+                *ngIf="cell.symbol"
+                [symbol]="cell.symbol"
+                [cellIndex]="cell.index"
+                [boardStyle]="boardStyle"
+            ></app-symbol>
+        </ng-container>
+    </div>
 </div>

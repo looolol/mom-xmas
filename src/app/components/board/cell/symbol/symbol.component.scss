@@ -1,24 +1,27 @@
 @use 'src/styles/variables' as *;
 
+.symbol {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+}
+
 .symbol-transform {
-  display: inline-block;
-  user-select: none;
+  width: 100%;
+  height: 100%;
   will-change: transform;
-  position: relative; // needed because flash overlays are absolutely positioned inside
 }
 
 .symbol-visual {
-  overflow: visible;
-  position: absolute; // establish positioning context for flash overlays
-  top: 0; left: 0;
-  width: 100%; height: 100%;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(16px, 2vw, 28px);  // responsive font size
-  line-height: 1;
-  // You can add any additional styling for the visual element here, e.g. padding, background, etc.
+  position: relative;
+  font-size: clamp(16px, 2vw, 28px);
 }
+
 
 .flash-overlay-star-wrapper {
   position: absolute;
@@ -45,7 +48,6 @@
       2% 35%, 39% 35%
   ); /* star shape */
   animation: flashFade 1.5s ease-in-out;
-  filter: drop-shadow(0 0 5px white);
 }
 
 /* White star */
@@ -59,7 +61,6 @@
 .flash-overlay-star-gradient {
   background: linear-gradient(45deg, orange, red);
   opacity: 0.5;
-  filter: drop-shadow(0 0 8px orange);
   animation-delay: 0s;
   z-index: 11;
 }

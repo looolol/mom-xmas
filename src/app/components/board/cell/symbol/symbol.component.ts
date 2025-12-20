@@ -5,6 +5,8 @@ import {CommonModule} from '@angular/common';
 import {AnimationMode, AnimationParams, SymbolAnimation} from '../../../../models/animation.model';
 import {AnimationService} from '../../../../services/animation.service';
 import {Subscription} from 'rxjs';
+import {TILE_SIZE_PX} from "../../../../utils/constants";
+import {BoardStyle} from "../../../../models/board.model";
 
 
 @Component({
@@ -18,24 +20,33 @@ import {Subscription} from 'rxjs';
 })
 export class SymbolComponent implements OnInit, OnDestroy {
   @Input() symbol!: SymbolModel;
+  @Input() cellIndex!: number;
+  @Input() boardStyle!: BoardStyle;
 
+  private sub?: Subscription;
   currentAnimation: SymbolAnimation | null = null;
-  private subscription?: Subscription;
 
 
   constructor(private animationService: AnimationService) { }
 
   ngOnInit() {
-    this.subscription = this.animationService.symbolAnimation$.subscribe(animations => {
-      // Find animation for this symbol ID or null if none
-      this.currentAnimation = animations.find(a => a.symbolId === this.symbol.id) ?? null;
+    this.sub = this.animationService.symbolAnimation$.subscribe(list => {
+      this.currentAnimation = list.find(a => a.symbolId === this.symbol.id) ?? null;
     });
   }
 
   ngOnDestroy() {
-    this.subscription?.unsubscribe();
+    this.sub?.unsubscribe();
   }
 
+
+  get x(): number {
+    return this.boardStyle.getCellPosition(this.cellIndex).x;
+  }
+
+  get y(): number {
+    return this.boardStyle.getCellPosition(this.cellIndex).y;
+  }
 
   onAnimationDone(): void {
     if (!this.currentAnimation) return;

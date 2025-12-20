@@ -27,28 +27,6 @@
   }
 }
 
-.game-board-wrapper {
-  flex: 1 1 auto; // take all remaining space
-  overflow: auto;
-  max-width: 100vw;
-
-  .game-board {
-    // Fix max size so it doesn’t overflow on large screens
-    max-width: 600px;
-    margin: 0 auto;
-  }
-}
-
-.game-cell {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: clamp(20px, 4vw, 32px);
-  border-radius: $cell-border-radius-px;
-  background-color: $cell-bg-color;
-  user-select: none;
-}
-
 .game-dialog {
   margin-top: 12px;
   padding: 12px;
@@ -56,4 +34,15 @@
   border-radius: 8px;
   font-size: clamp(1rem, 3vw, 1.25rem);
   text-align: center;
+}
+
+
+.board-area {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  //padding: 16px;
+  box-sizing: border-box;
+  overflow: auto;
 }

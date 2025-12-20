@@ -1,22 +1,39 @@
 <div
-  class="symbol-transform"
-  [@motion]="{
-    value: motionState,
-    params: params
-  }"
-  (@motion.done)="onAnimationDone()"
+    class="symbol"
+    [style.left.px]="x"
+    [style.top.px]="y"
+    [style.width.px]="boardStyle.cellSizePx"
+    [style.height.px]="boardStyle.cellSizePx"
 >
-  <div
-    class="symbol-visual"
-    [@clearing]="clearingState"
-    (@clearing.done)="onAnimationDone()"
-  >
-    {{ symbol.kind }}
+    <div
+        class="symbol-transform"
+        [@motion]="{
+            value: motionState,
+            params: params
+        }"
+        (@motion.done)="onAnimationDone()"
+    >
+        <div
+            class="symbol-visual"
+            [@clearing]="clearingState"
+            (@clearing.done)="onAnimationDone()"
+        >
+            {{ symbol.kind }}
 
-    <div class="flash-overlay-star-wrapper"
-         *ngIf="clearingState === AnimationRenderMode.Clearing">
-      <div class="flash-overlay-star-white"></div>
-      <div class="flash-overlay-star-gradient"></div>
+            <div class="flash-overlay-star-wrapper"
+                 *ngIf="clearingState === AnimationRenderMode.Clearing"
+                 [style.width.%]="110"
+                 [style.height.%]="110"
+            >
+                <div
+                    class="flash-overlay-star-white"
+                    [style.filter]="'drop-shadow(0 0 ' + (boardStyle.cellSizePx * 0.08) + 'px white)'"
+                ></div>
+                <div
+                    class="flash-overlay-star-gradient"
+                    [style.filter]="'drop-shadow(0 0 ' + (boardStyle.cellSizePx * 0.12) + 'px orange'"
+                ></div>
+            </div>
+        </div>
     </div>
-</div>
 </div>
