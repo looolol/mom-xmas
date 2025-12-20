@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1766136936306,
+  "timestamp": 1766220021788,
   "index": "/mom-xmas/index.html",
   "assetGroups": [
     {
@@ -12,11 +12,11 @@
       },
       "urls": [
         "/mom-xmas/index.html",
-        "/mom-xmas/main.937c0ae82505eb92.js",
+        "/mom-xmas/main.2ea6977ba64c13a1.js",
         "/mom-xmas/manifest.webmanifest",
         "/mom-xmas/polyfills.a46bd56511033644.js",
         "/mom-xmas/runtime.9e5a0612ff97c217.js",
-        "/mom-xmas/styles.948137f811258360.css"
+        "/mom-xmas/styles.1e1d6e394bd82951.css"
       ],
       "patterns": []
     },
@@ -28,6 +28,7 @@
         "ignoreVary": true
       },
       "urls": [
+        "/mom-xmas/assets/avatars/mom-droid.png",
         "/mom-xmas/assets/tarmogoyf.png"
       ],
       "patterns": []
@@ -35,13 +36,14 @@
   ],
   "dataGroups": [],
   "hashTable": {
+    "/mom-xmas/assets/avatars/mom-droid.png": "ebbe460f7753f2ff3fb250d0e2d0840359f2f197",
     "/mom-xmas/assets/tarmogoyf.png": "cedcc0261d98ac2abdf94b03e3f148893314f620",
-    "/mom-xmas/index.html": "5807c4734b1a716d7984fc568ce9b4f7d5ebb0fc",
-    "/mom-xmas/main.937c0ae82505eb92.js": "569805c6923b741b981234288f2688bf8c97bb0c",
+    "/mom-xmas/index.html": "23f773ea357ccf31ea069abb435ed9ec1fa3b964",
+    "/mom-xmas/main.2ea6977ba64c13a1.js": "da3f7670efb176c2a67991e6db7fd657604d527a",
     "/mom-xmas/manifest.webmanifest": "40ebe45e4e51e426917d36fb81358957a704109a",
     "/mom-xmas/polyfills.a46bd56511033644.js": "180c04c52b4c414faf328958ade2d2fdefc83336",
     "/mom-xmas/runtime.9e5a0612ff97c217.js": "a6361d5279281c07e0efe240554d2169e679a0fa",
-    "/mom-xmas/styles.948137f811258360.css": "abb75b5e51e99ebf5884f72471efce16e1a4905f"
+    "/mom-xmas/styles.1e1d6e394bd82951.css": "f869668185af64949184c7d508887d0d751fb509"
   },
   "navigationUrls": [
     {
