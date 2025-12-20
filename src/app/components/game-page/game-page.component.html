@@ -8,9 +8,10 @@
     </button>
   </header>
 
-  <section class="board-area">
+  <section #boardArea class="board-area">
     <app-board
       [board]="board"
+      [tileSizePx]="tileSizePx"
       [selectedCellIndex]="selectedCell?.index ?? null"
       (cellClick)="onCellClick($event)"
     ></app-board>

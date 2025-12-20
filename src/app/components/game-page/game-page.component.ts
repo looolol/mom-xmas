@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {GameService} from '../../services/game.service';
 import {BoardComponent} from '../board/board.component';
@@ -23,15 +23,21 @@ import {MatIconModule} from '@angular/material/icon';
 })
 export class GamePageComponent implements OnInit, OnDestroy {
 
+  @ViewChild('boardArea', { static: true }) boardArea!: ElementRef<HTMLDivElement>;
+
   board: BoardState | null = null;
   selectedCell: Cell | null = null;
   canInteract: boolean = false;
+  isPaused: boolean = false;
   score: number = 0;
+  movesLeft: number = 20;
+
+
+  tileSizePx: number = 32;
+  private readonly GAP_PX = 4;
 
   dialogMessage: string | null = null;
   notification: string | null = null;
-  movesLeft: number = 20;
-  isPaused: boolean = false;
 
   private destroy$ = new Subject<void>();
 
@@ -61,16 +67,39 @@ export class GamePageComponent implements OnInit, OnDestroy {
       });
 
     this.gameService.startGame(LEVEL_1.board);
+    this.calculateTileSize(); // init calc
 
     this.dialogMessage = "Do YoUr LaUnDrY!!!";
     this.notification = "Out of Moves !!!";
   }
+
+  @HostListener('window:resize')
+  onResize() {
+    this.calculateTileSize();
+  }
+
 
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
+
+  calculateTileSize() {
+    if (!this.boardArea || !this.board) return;
+
+    const container = this.boardArea.nativeElement;
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+
+    const cols = this.board.cols;
+    const rows = this.board.rows;
+
+    const tileSizeWidth = (containerWidth - (cols - 1) * this.GAP_PX) / cols;
+    const tileSizeHeight = (containerHeight - (rows - 1) * this.GAP_PX) / rows;
+
+    this.tileSizePx = Math.floor(Math.min(tileSizeWidth, tileSizeHeight));
+  }
 
   async onCellClick(cell: Cell) {
     if (!this.canInteract) return;

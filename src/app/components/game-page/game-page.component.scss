@@ -36,6 +36,13 @@
   justify-content: center;
   align-items: center;
   overflow: hidden;
+
+  background-color: #3c3c54;
+
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 12px;
+  box-sizing: border-box;
 }
 
 
@@ -55,7 +62,7 @@
 
 .side-panel {
   width: 100%;                // fill full width of bottom-bar
-  max-width: 600px;
+  //max-width: 600px;
   padding: 12px;
   background-color: rgba(255, 255, 255, 0.06);
   border-radius: 12px;
