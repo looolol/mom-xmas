@@ -6,9 +6,11 @@ export enum AnimationMode {
   None = 'none',
   Move = 'move',
   Clearing = 'clearing',
+  Creating = 'creating',
 }
 
 export interface AnimationParams {
+  tileSizePx?: number;
   fallingFrom?: number,
   x?: string;
   y?: string;

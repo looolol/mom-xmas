@@ -7,3 +7,16 @@ body {
 html, body {
   touch-action: manipulation;
 }
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+//.mat-grid-tile {
+//  padding: 0 !important;
+//  background-color: transparent !important;
+//  border-radius: 6px !important;
+//
+//  display: flex !important;
+//  justify-content: center !important;
+//  align-items: center !important;
+//}

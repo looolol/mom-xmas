@@ -1,10 +1,12 @@
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, Input, OnChanges, OnDestroy, OnInit} from '@angular/core';
 import {SymbolModel} from '../../../../models/symbol.model';
 import {clearingAnimation, motionAnimation,} from '../../../../animations/symbol.animations';
 import {CommonModule} from '@angular/common';
 import {AnimationMode, AnimationParams, SymbolAnimation} from '../../../../models/animation.model';
 import {AnimationService} from '../../../../services/animation.service';
 import {Subscription} from 'rxjs';
+import {EventService} from "../../../../services/event.service";
+import {randomSymbol} from "../../../../utils/random-symbol";
 
 
 @Component({
@@ -16,38 +18,63 @@ import {Subscription} from 'rxjs';
   styleUrl: './symbol.component.scss',
   animations: [motionAnimation, clearingAnimation],
 })
-export class SymbolComponent implements OnInit, OnDestroy {
+export class SymbolComponent implements OnInit, OnChanges, OnDestroy {
   @Input() symbol!: SymbolModel;
+  @Input() tileSizePx!: number;
 
+  private animationSub?: Subscription;
   currentAnimation: SymbolAnimation | null = null;
-  private subscription?: Subscription;
 
+  private eventSub?: Subscription;
+  displayedSymbol!: string;
+  hearingLoss = false;
 
-  constructor(private animationService: AnimationService) { }
+  constructor(
+      private animationService: AnimationService,
+      private eventService: EventService,
+  ) { }
 
   ngOnInit() {
-    this.subscription = this.animationService.symbolAnimation$.subscribe(animations => {
-      // Find animation for this symbol ID or null if none
-      this.currentAnimation = animations.find(a => a.symbolId === this.symbol.id) ?? null;
+    this.animationSub = this.animationService.symbolAnimation$.subscribe(list => {
+      this.currentAnimation = list.find(a => a.symbolId === this.symbol.id) ?? null;
     });
+
+    // init display symbol;
+    this.displayedSymbol = this.symbol.kind;
+
+    this.eventSub = this.eventService.events$.subscribe(event =>{
+      if (event.type === 'HEARING_LOSS') {
+        this.hearingLoss = true;
+        this.updateDisplaySymbol();
+      }
+      else if (event.type === 'HEARING_LOSS_CLEAR') {
+        this.hearingLoss = false;
+        this.updateDisplaySymbol();
+      }
+    })
   }
 
   ngOnDestroy() {
-    this.subscription?.unsubscribe();
+    this.animationSub?.unsubscribe();
+    this.eventSub?.unsubscribe();
   }
 
+  ngOnChanges() {
+    this.updateDisplaySymbol();
+  }
 
   onAnimationDone(): void {
     if (!this.currentAnimation) return;
-    if (this.clearingState) console.log("Animation done, clearing state, symbol", this.symbol.id)
-    // if (!this.currentAnimation || this.currentAnimation.renderMode === AnimationMode.None) return;
     this.animationService.notifySymbolDone(this.symbol.id);
   }
 
   get motionState() {
-    return this.currentAnimation?.renderMode === AnimationMode.Move
-      ? AnimationMode.Move
-      : AnimationMode.None;
+    if (!this.currentAnimation) return AnimationMode.None;
+
+    if (this.currentAnimation.renderMode === AnimationMode.Move) return AnimationMode.Move;
+    if (this.currentAnimation.renderMode === AnimationMode.Creating) return AnimationMode.Creating;
+
+    return AnimationMode.None;
   }
 
   get clearingState() {
@@ -57,8 +84,21 @@ export class SymbolComponent implements OnInit, OnDestroy {
   }
 
   get params(): AnimationParams {
-    return this.currentAnimation?.params ?? {};
+    return {
+      ...this.currentAnimation?.params,
+      tileSizePx: this.tileSizePx
+    };
+  }
+
+  private updateDisplaySymbol() {
+    if (this.hearingLoss) {
+      this.displayedSymbol = randomSymbol();
+    }
+    else {
+      this.displayedSymbol = this.symbol.kind;
+    }
   }
 
   protected readonly AnimationRenderMode = AnimationMode;
+  protected readonly randomSymbol = randomSymbol;
 }

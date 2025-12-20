@@ -1,4 +1,3 @@
-import {TILE_SIZE_PX} from '../utils/constants';
 import {Position} from './position.model';
 
 export enum Dir {
@@ -9,15 +8,11 @@ export enum Dir {
 }
 
 export class Direction {
-  public displayOffset: Position;
-
   constructor(
     public name: Dir,
     public delta: Position,
     public opposite: Dir
-  ) {
-    this.displayOffset = new Position(delta.row * TILE_SIZE_PX, delta.col * TILE_SIZE_PX);
-  }
+  ) { }
 
   static fromName(name: Dir): Direction {
     return Directions[name];
@@ -48,8 +43,8 @@ export function getDirectionDisplayOffset(direction: Direction | undefined): { x
   if (!direction) return undefined;
 
   return {
-    x: `${direction.displayOffset.col}px`,
-    y: `${direction.displayOffset.row}px`,
+    x: `${direction.delta.col}px`,
+    y: `${direction.delta.row}px`,
   }
 }
 

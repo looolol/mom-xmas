@@ -1,8 +1,7 @@
-import {Component, Input, OnChanges, SimpleChanges} from '@angular/core';
+import {Component, Input} from '@angular/core';
 import {Cell, CellType} from '../../../models/cell.model';
 import {CommonModule} from '@angular/common';
 import {SymbolComponent} from './symbol/symbol.component';
-import {AnimationMode, SymbolAnimation} from '../../../models/animation.model';
 
 
 @Component({
@@ -15,9 +14,9 @@ import {AnimationMode, SymbolAnimation} from '../../../models/animation.model';
   styleUrl: './cell.component.scss'
 })
 export class CellComponent {
-
   @Input() cell!: Cell;
-  @Input() animation: SymbolAnimation | null = null;
+  @Input() isSelected = false;
+  @Input() tileSizePx!: number;
 
-  protected readonly CellTypeEnum = CellType;
+  protected readonly CellType = CellType;
 }

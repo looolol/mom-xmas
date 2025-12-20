@@ -1,12 +1,14 @@
 <div
-  class="cell"
-  [ngClass]="{
-    'blocked': cell.type === CellTypeEnum.Blocked,
-    'null': cell.type === CellTypeEnum.Null,
-  }"
+    class="cell"
+    [class.blocoked]="cell.type === CellType.Blocked"
+    [class.null]="cell.type === CellType.Null"
+    [class.selected]="isSelected"
+    [style.width.px]="tileSizePx"
+    [style.height.px]="tileSizePx"
 >
-  <app-symbol
-    *ngIf="cell.symbol"
-    [symbol]="cell.symbol"
-  ></app-symbol>
+    <app-symbol
+        *ngIf="cell.symbol"
+        [symbol]="cell.symbol"
+        [tileSizePx]="tileSizePx"
+    ></app-symbol>
 </div>

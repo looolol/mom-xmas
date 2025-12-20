@@ -7,6 +7,14 @@ export enum CellType {
   Null = 2,
 }
 
+const cellTypes = Object.values(CellType)
+    .filter(v => typeof v === 'number') as number[];
+
+export function getRandomCellType(): number {
+  const index = Math.floor(Math.random() * cellTypes.length);
+  return cellTypes[index];
+}
+
 export class Cell {
   constructor(
     public pos: Position,

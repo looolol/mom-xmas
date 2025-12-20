@@ -1,0 +1,70 @@
+<div class="game-container">
+
+  <header class="game-header">
+    <h1>Candy Crush Droid</h1>
+    <div class="score-display">Score: {{score}}</div>
+    <button mat-mini-fab color="primary" (click)="isPaused=true">
+      <mat-icon>pause</mat-icon>
+    </button>
+  </header>
+
+  <section #boardArea class="board-area">
+    <app-board
+      [board]="board"
+      [tileSizePx]="tileSizePx"
+      [selectedCellIndex]="selectedCell?.index ?? null"
+      (cellClick)="onCellClick($event)"
+    ></app-board>
+  </section>
+
+  <div class="bottom-bar">
+    <section class="side-panel">
+
+      <!-- Left column: avatar -->
+      <div class="panel-avatar" [class.bounce]="isTalking">
+        <img
+          src="assets/avatars/mom-droid.png"
+          alt="Droid Avatar"
+          class="droid-avatar"
+        />
+      </div>
+
+      <!-- Right column: stacked content -->
+      <div class="panel-right">
+        <div class="panel-content dialog" *ngIf="dialogMessage">
+          {{ dialogMessage }}
+        </div>
+
+        <div class="panel-content notifications" *ngIf="notification">
+          {{ notification }}
+        </div>
+      </div>
+    </section>
+
+
+
+    <!-- Footer: power-ups, moves left, buttons -->
+    <footer class="game-footer">
+      <div class="moves-left">Moves Left: {{movesLeft}}</div>
+      <div class="power-up">
+        <button mat-mini-fab color="primary" aria-label="Shuffle">
+          <mat-icon>shuffle</mat-icon>
+        </button>
+
+        <button mat-mini-fab color="warn" aria-label="Bomb">
+          <mat-icon>whatshot</mat-icon>
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Pause/Settings overlay (hidden unless active) -->
+  <div class="overlay pause-menu" *ngIf="isPaused">
+    <h2>Game Paused</h2>
+    <button mat-raised-button color="primary" (click)="resumeGame()">Resume</button>
+    <button mat-stroked-button color="accent" (click)="restartLevel()">Restart</button>
+    <button mat-stroked-button (click)="openSettings()">Settings</button>
+  </div>
+
+
+</div>

@@ -1,13 +1,13 @@
-import {Component, OnInit} from '@angular/core';
-import {BoardService} from '../../services/board.service';
-import {LEVEL_1} from '../../levels/level1';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {CellComponent} from './cell/cell.component';
-import {Cell} from '../../models/cell.model';
-import {TILE_SIZE_PX} from '../../utils/constants';
 import {BoardState} from '../../models/board.model';
-import {GameService} from '../../services/game.service';
-import {GamePhase} from '../../models/game.model';
+import {Cell} from '../../models/cell.model';
 
 @Component({
   selector: 'app-board',
@@ -18,94 +18,25 @@ import {GamePhase} from '../../models/game.model';
   templateUrl: './board.component.html',
   styleUrl: './board.component.scss'
 })
-export class BoardComponent implements OnInit {
-
-  selectedCell: Cell | null = null;
-
-  board: BoardState | null = null;
-  score: number = -1;
-  phase: GamePhase = GamePhase.Uninitialized;
-  canInteract: boolean = false;
+export class BoardComponent {
 
 
-  constructor(
-    private gameService: GameService,
-    private boardService: BoardService,
-  ) { }
+  @Input() board!: BoardState | null;
+  @Input() tileSizePx!: number;
+  @Input() selectedCellIndex: number | null = null;
+
+  @Output() cellClick = new EventEmitter<Cell>();
 
 
-  ngOnInit() {
-    this.boardService.board$.subscribe(board => {
-      this.board = board;
-    });
-
-    this.gameService.phase$.subscribe(phase => {
-      this.phase = phase;
-    });
-
-    this.gameService.score$.subscribe(score => {
-      this.score = score;
-    });
-
-    this.gameService.canInteract$.subscribe(canInteract => {
-      this.canInteract = canInteract;
-    });
-
-    this.gameService.startGame(LEVEL_1.board);
+  onCellClick(cell: Cell) {
+    this.cellClick.emit(cell);
   }
 
-
-  async onCellClick(cell: Cell) {
-    if (!this.canInteract) return;
-
-    // No cell selected
-    if (!this.selectedCell) {
-      this.selectedCell = cell;
-      return;
-    }
-
-    // If same cell clicked, deselect
-    if (this.selectedCell.index === cell.index) {
-      this.selectedCell = null;
-      return;
-    }
-
-    // Check if the two cells are adjacent (horizontal or vertical neighbors)
-    const adj = this.selectedCell.isAdjacent(cell);
-    console.log("adj", adj);
-    if (!this.selectedCell.isAdjacent(cell)) {
-      // replace with newly selected cell
-      this.selectedCell = cell;
-      return;
-    }
-
-    // Attempt swap
-    console.log("swapping cells", this.selectedCell, cell);
-    await this.onPlayerSwap(this.selectedCell, cell);
-
-    // clear selection after swap attempt
-    this.selectedCell = null;
+  isSelected(cell: Cell): boolean {
+    return this.selectedCellIndex === cell.index;
   }
-
-   async onPlayerSwap(cellA: Cell, cellB: Cell) {
-    console.log('onPlayerSwap', cellA, cellB);
-    const success = await this.gameService.playerSwap(cellA, cellB);
-    if (!success) {
-      // optional show some message or animation for invalid swap
-      // snackbar or toast?
-      console.warn('Invalid swap!');
-    }
-  }
-
 
   trackByCell(idx: number, cell: Cell) {
     return cell.index;
   }
-
-  isSelected(cell: Cell): boolean {
-    return this.selectedCell?.index === cell.index && this.canInteract;
-  }
-
-
-  protected readonly TILE_SIZE_PX = TILE_SIZE_PX;
 }

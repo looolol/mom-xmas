@@ -1,21 +1,20 @@
-export const SYMBOLS = ['🍒', '🍋', '🍇', '⭐', '🍬'];
+export const SYMBOLS = [
+  '🍪', '🌏', '🔥',  '🎠',  '⭐', '😈',
+];
 export const DEFAULT_SYMBOLS = SYMBOLS[0];
 
-export const FALLING_FROM_OFFBOARD = -1;
 export const MATCH_CHECK_DEPTH = 2;
 
-export const TILE_SIZE_PX = 48;
-
-export const FALLING_ANIMATION_DURATIONS_MS = 400;
-
-export const SYMBOL_FONT_SIZE_PX = 28;
+export const TILE_SIZE_PX = getTileSizePx();
 
 export const POINTS_PER_CELL = 10;
 
-export const BOARD_BACKGROUND_COLOR = '#1e1e2F';
-export const CELL_BACKGROUND_COLOR = '#28293d';
-export const CELL_BLOCKED_COLOR = '#11111f';
+function getTileSizePx(): number {
+  const width = window.innerWidth;
 
-export const CELL_BOARDER_RADIUS_PX = 6;
-
-export const SYMBOL_TRANSITION_EASING = 'ease';
+  if (width < 360) return 28;  // very small phones
+  if (width < 480) return 32;  // small phones
+  if (width < 768) return 40;  // tablets in portrait
+  if (width < 1024) return 48; // tablets/large phones landscape
+  return 64;                   // desktops/large tablets
+}

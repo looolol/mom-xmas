@@ -5,6 +5,9 @@ import { BoardService } from './board.service';
 import { Cell } from '../models/cell.model';
 import { POINTS_PER_CELL } from '../utils/constants';
 import { GamePhase, gameModel } from '../models/game.model';
+import { DialogService } from './dialog.service';
+import {dialogLinesBySymbol} from "../models/dialog.model";
+import {EventService} from "./event.service";
 
 @Injectable({
   providedIn: 'root'
@@ -21,7 +24,13 @@ export class GameService {
     map(phase => phase === GamePhase.Idle)
   );
 
-  constructor(private boardService: BoardService) { }
+
+  constructor(
+      private boardService: BoardService,
+      private eventService: EventService,
+      private dialogService: DialogService,
+  ) { }
+
 
   private setPhase(next: GamePhase) {
     const phase = this._phase$.getValue();
@@ -45,14 +54,12 @@ export class GameService {
   }
 
   async startGame(config: BoardConfig) {
-    console.log('Starting game...');
     this.setPhase(GamePhase.Uninitialized);
 
     this.boardService.initBoard(config);
     this.score = 0;
 
     this.setPhase(GamePhase.Idle);
-    console.log('Resolving initial matches on board...');
     await this.resolveMatches();
     this.setPhase(GamePhase.Idle);
   }
@@ -109,28 +116,123 @@ export class GameService {
    * Resolves matches on the board: clears matches, drops symbols, fills empty cells, and repeats if new matches appear.
    */
   private async resolveMatches(startingMatches?: Cell[]): Promise<void> {
-    console.log('Resolving matches...');
     let matches = startingMatches ?? this.boardService.detectMatches();
+    let comboCount = 0;
 
     while (matches.length > 0) {
+      comboCount += 1;
       this.setPhase(GamePhase.ResolvingMatches);
-      console.log('Animating clear...');
       await this.boardService.animateClear(matches);
 
-      console.log('Updating Board...');
       const clearedBoard = this.boardService.clearCells(this.boardService.board!, matches);
       this.boardService.updateBoard(clearedBoard);
       this.addScore(matches);
 
       this.setPhase(GamePhase.ResolvingDrop);
       const droppedBoard = this.boardService.applyGravity(clearedBoard!);
-
-      this.setPhase(GamePhase.Filling);
       await this.boardService.animateDrop(clearedBoard, droppedBoard);
       this.boardService.updateBoard(droppedBoard);
 
+      this.setPhase(GamePhase.Filling);
+      const newSymbols = this.boardService.detectNewSymbols(clearedBoard, droppedBoard);
+      await this.boardService.animateCreate(newSymbols);
+
+      this.triggerDialogForMatches(matches);
+      this.checkComboEvents(comboCount, matches);
+
       matches = this.boardService.detectMatches(this.boardService.board);
-      console.log(`Matches found after fill: ${matches.length}`)
     }
   }
+
+  private triggerDialogForMatches(matches: Cell[]) {
+    if (matches.length === 0) return;
+
+    const countBySymbol = matches.reduce<Record<string, number>>((acc, cell) => {
+      const symbolKind = cell.getSymbolKind();
+      if (!symbolKind) return acc;
+      acc[symbolKind] = (acc[symbolKind] || 0) + 1;
+      return acc;
+    }, {});
+
+    const [topSymbol] = Object.entries(countBySymbol).sort((a, b) => b[1] - a[1])[0] ?? [];
+    if (!topSymbol) return;
+
+    const lines = dialogLinesBySymbol[topSymbol];
+    if (!lines || lines.length === 0) return;
+
+    const validLines = lines.filter(line => Math.random() < line.chance);
+    if (validLines.length === 0) return;
+
+    const chosenLine = validLines[Math.floor(Math.random() * validLines.length)];
+
+    this.dialogService.showDialog(chosenLine.text, 4000);
+  }
+
+  private checkComboEvents(comboCount: number, matches: Cell[]) {
+    // Bad Combo
+    if (comboCount === 1) {
+      const eventChance = Math.random();
+      // Hearing event
+      if (eventChance < 0.10) {
+        this.eventService.emit({ type: 'HEARING_LOSS', durationMs: 10000});
+        this.dialogService.showNotifications('What??? Symbols are misheard for a while...', 5000);
+        return; // Priority
+      }
+    }
+
+    // Combo dialog every 3 combos
+    if (comboCount === 3) {
+      this.dialogService.showNotifications("Combo x3! Nice streak!", 3000);
+    } else if (comboCount === 4) {
+      this.dialogService.showNotifications("Combo x4! Crushing it!", 3000);
+    } else if (comboCount >= 5) {
+      this.dialogService.showNotifications("Combo x5! Legendary!", 3000);
+      return; // Priority
+    }
+
+    // Check for big matches (length >= 5)
+    const clusters = this.groupMatchesByClusters(matches);
+    const bigMatches = clusters.filter(cluster => cluster.length >= 5);
+
+    if (bigMatches.length > 0) {
+      this.dialogService.showNotifications("Big Match! Wow!", 3000);
+    }
+  }
+
+  private groupMatchesByClusters(matches: Cell[]): Cell[][] {
+    const clusters: Cell[][] = [];
+    const visited = new Set<string>();
+
+    // Helper: stringify position for set
+    const posKey = (cell: Cell) => `${cell.pos.row},${cell.pos.col}`;
+
+    // Check adjacency for same symbol kind
+    const areAdjacent = (a: Cell, b: Cell) => a.isAdjacent(b) && a.getSymbolKind() === b.getSymbolKind();
+
+    for (const cell of matches) {
+      if (visited.has(posKey(cell))) continue;
+
+      const cluster: Cell[] = [];
+      const stack = [cell];
+      visited.add(posKey(cell));
+
+      while (stack.length > 0) {
+        const current = stack.pop()!;
+        cluster.push(current);
+
+        // Find neighbors in matches not visited yet
+        for (const neighbor of matches) {
+          if (!visited.has(posKey(neighbor)) && areAdjacent(current, neighbor)) {
+            visited.add(posKey(neighbor));
+            stack.push(neighbor);
+          }
+        }
+      }
+
+      clusters.push(cluster);
+    }
+
+    return clusters;
+  }
+
 }
