@@ -115,8 +115,10 @@ export class GameService {
    */
   private async resolveMatches(startingMatches?: Cell[]): Promise<void> {
     let matches = startingMatches ?? this.boardService.detectMatches();
+    let comboCount = 0;
 
     while (matches.length > 0) {
+      comboCount += 1;
       this.setPhase(GamePhase.ResolvingMatches);
       await this.boardService.animateClear(matches);
 
@@ -134,6 +136,7 @@ export class GameService {
       await this.boardService.animateCreate(newSymbols);
 
       this.triggerDialogForMatches(matches);
+      this.checkComboEvents(comboCount, matches);
 
       matches = this.boardService.detectMatches(this.boardService.board);
     }
@@ -162,4 +165,61 @@ export class GameService {
 
     this.dialogService.showDialog(chosenLine.text, 4000);
   }
+
+  private checkComboEvents(comboCount: number, matches: Cell[]) {
+    console.log('matches', matches);
+    // Combo dialog every 3 combos
+    if (comboCount === 3) {
+      this.dialogService.showNotifications("Combo x3! Nice streak!", 3000);
+    } else if (comboCount === 4) {
+      this.dialogService.showNotifications("Combo x4! Crushing it!", 3000);
+    } else if (comboCount >= 5) {
+      this.dialogService.showNotifications("Combo x5! Legendary!", 3000);
+    }
+
+    // Check for big matches (length >= 5)
+    const clusters = this.groupMatchesByClusters(matches);
+    const bigMatches = clusters.filter(cluster => cluster.length >= 5);
+
+    if (bigMatches.length > 0) {
+      this.dialogService.showNotifications("Big Match! Wow!", 3000);
+    }
+  }
+
+  private groupMatchesByClusters(matches: Cell[]): Cell[][] {
+    const clusters: Cell[][] = [];
+    const visited = new Set<string>();
+
+    // Helper: stringify position for set
+    const posKey = (cell: Cell) => `${cell.pos.row},${cell.pos.col}`;
+
+    // Check adjacency for same symbol kind
+    const areAdjacent = (a: Cell, b: Cell) => a.isAdjacent(b) && a.getSymbolKind() === b.getSymbolKind();
+
+    for (const cell of matches) {
+      if (visited.has(posKey(cell))) continue;
+
+      const cluster: Cell[] = [];
+      const stack = [cell];
+      visited.add(posKey(cell));
+
+      while (stack.length > 0) {
+        const current = stack.pop()!;
+        cluster.push(current);
+
+        // Find neighbors in matches not visited yet
+        for (const neighbor of matches) {
+          if (!visited.has(posKey(neighbor)) && areAdjacent(current, neighbor)) {
+            visited.add(posKey(neighbor));
+            stack.push(neighbor);
+          }
+        }
+      }
+
+      clusters.push(cluster);
+    }
+
+    return clusters;
+  }
+
 }

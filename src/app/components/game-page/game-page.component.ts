@@ -149,9 +149,8 @@ export class GamePageComponent implements OnInit, OnDestroy {
   async onPlayerSwap(cellA: Cell, cellB: Cell) {
     const success = await this.gameService.playerSwap(cellA, cellB);
     if (!success) {
-      // optional show some message or animation for invalid swap
-      // snackbar or toast?
-      console.warn('Invalid swap!');
+      this.dialogService.showDialog("Bite Me!")
+      this.dialogService.showNotifications("No matches.");
     }
   }
 

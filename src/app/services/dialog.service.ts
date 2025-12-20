@@ -15,7 +15,7 @@ export class DialogService {
 
   showDialog(text: string, durationMs = 3000) {
    this._dialogText$.next(text);
-    setTimeout(() => this.clearDialog(), durationMs);
+   setTimeout(() => this.clearDialog(), durationMs);
   }
 
   clearDialog() {
