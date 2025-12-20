@@ -15,7 +15,7 @@
             [@clearing]="clearingState"
             (@clearing.done)="onAnimationDone()"
         >
-            {{ symbol.kind }}
+            {{ displayedSymbol }}
 
             <div class="flash-overlay-star-wrapper"
                  *ngIf="clearingState === AnimationRenderMode.Clearing"

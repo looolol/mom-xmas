@@ -7,6 +7,7 @@ import { POINTS_PER_CELL } from '../utils/constants';
 import { GamePhase, gameModel } from '../models/game.model';
 import { DialogService } from './dialog.service';
 import {dialogLinesBySymbol} from "../models/dialog.model";
+import {EventService} from "./event.service";
 
 @Injectable({
   providedIn: 'root'
@@ -26,6 +27,7 @@ export class GameService {
 
   constructor(
       private boardService: BoardService,
+      private eventService: EventService,
       private dialogService: DialogService,
   ) { }
 
@@ -167,7 +169,17 @@ export class GameService {
   }
 
   private checkComboEvents(comboCount: number, matches: Cell[]) {
-    console.log('matches', matches);
+    // Bad Combo
+    if (comboCount === 1) {
+      const eventChance = Math.random();
+      // Hearing event
+      if (eventChance < 0.10) {
+        this.eventService.emit({ type: 'HEARING_LOSS', durationMs: 10000});
+        this.dialogService.showNotifications('What??? Symbols are misheard for a while...', 5000);
+        return; // Priority
+      }
+    }
+
     // Combo dialog every 3 combos
     if (comboCount === 3) {
       this.dialogService.showNotifications("Combo x3! Nice streak!", 3000);
@@ -175,6 +187,7 @@ export class GameService {
       this.dialogService.showNotifications("Combo x4! Crushing it!", 3000);
     } else if (comboCount >= 5) {
       this.dialogService.showNotifications("Combo x5! Legendary!", 3000);
+      return; // Priority
     }
 
     // Check for big matches (length >= 5)
