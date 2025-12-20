@@ -3,4 +3,12 @@
     [class.blocoked]="cell.type === CellType.Blocked"
     [class.null]="cell.type === CellType.Null"
     [class.selected]="isSelected"
-></div>
+    [style.width.px]="tileSizePx"
+    [style.height.px]="tileSizePx"
+>
+    <app-symbol
+        *ngIf="cell.symbol"
+        [symbol]="cell.symbol"
+        [tileSizePx]="tileSizePx"
+    ></app-symbol>
+</div>

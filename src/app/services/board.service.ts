@@ -3,7 +3,7 @@ import {BehaviorSubject} from 'rxjs';
 import {allPositions, BoardConfig, BoardState, getCellType} from '../models/board.model';
 import {Cell, CellType} from '../models/cell.model';
 import {randomSymbolExcluding} from '../utils/random-symbol';
-import {MATCH_CHECK_DEPTH, TILE_SIZE_PX} from '../utils/constants';
+import {MATCH_CHECK_DEPTH} from '../utils/constants';
 import {AnimationService} from './animation.service';
 import {Position} from '../models/position.model';
 import {
@@ -109,6 +109,8 @@ export class BoardService {
     const offset = getDirectionDisplayOffset(swapDir);
     const oppositeOffset = getDirectionDisplayOffset(oppositeDir);
 
+    console.log('offset', offset);
+
     await this.animationService.play(
       [
         {
@@ -165,7 +167,7 @@ export class BoardService {
             renderMode: AnimationMode.Move,
             params: {
               x: '0px',
-              y: `${fallDistance * TILE_SIZE_PX}px`,
+              y: `${fallDistance}px`,
             }
           };
           return animation;

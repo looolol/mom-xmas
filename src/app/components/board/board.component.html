@@ -1,27 +1,17 @@
-<div class="board-wrapper">
+<div #boardWrapper class="board-wrapper">
     <div
         class="board"
         *ngIf="board"
         [style.--cols]="board.cols"
         [style.--rows]="board.rows"
-        [style.--cell-size.px]="cellSizePx"
+        [style.--cell-size.px]="tileSizePx"
     >
-        <!-- Grid cells (static layer) -->
         <app-cell
             *ngFor="let cell of board.cells; trackBy: trackByCell"
             [cell]="cell"
             [isSelected]="isSelected(cell)"
+            [tileSizePx]="tileSizePx"
             (click)="onCellClick(cell)"
         ></app-cell>
-
-        <!-- Symbols (motion layer) -->
-        <ng-container *ngFor="let cell of board.cells; trackBy: trackByCell">
-            <app-symbol
-                *ngIf="cell.symbol"
-                [symbol]="cell.symbol"
-                [cellIndex]="cell.index"
-                [boardStyle]="boardStyle"
-            ></app-symbol>
-        </ng-container>
     </div>
 </div>

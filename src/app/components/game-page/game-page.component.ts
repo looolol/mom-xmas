@@ -7,21 +7,31 @@ import {BoardState} from '../../models/board.model';
 import {BoardService} from '../../services/board.service';
 import {LEVEL_1} from '../../levels/level1';
 import {Subject, takeUntil} from 'rxjs';
+import {MatButtonModule} from '@angular/material/button';
+import {MatIconModule} from '@angular/material/icon';
 
 @Component({
   selector: 'app-game-page',
   imports: [
     CommonModule,
     BoardComponent,
+    MatButtonModule,
+    MatIconModule,
   ],
   templateUrl: './game-page.component.html',
   styleUrl: './game-page.component.scss'
 })
 export class GamePageComponent implements OnInit, OnDestroy {
-  selectedCell: Cell | null = null;
+
   board: BoardState | null = null;
-  score: number = -1;
+  selectedCell: Cell | null = null;
   canInteract: boolean = false;
+  score: number = 0;
+
+  dialogMessage: string | null = null;
+  notification: string | null = null;
+  movesLeft: number = 20;
+  isPaused: boolean = false;
 
   private destroy$ = new Subject<void>();
 
@@ -51,6 +61,9 @@ export class GamePageComponent implements OnInit, OnDestroy {
       });
 
     this.gameService.startGame(LEVEL_1.board);
+
+    this.dialogMessage = "Do YoUr LaUnDrY!!!";
+    this.notification = "Out of Moves !!!";
   }
 
   ngOnDestroy() {
@@ -98,4 +111,19 @@ export class GamePageComponent implements OnInit, OnDestroy {
     }
   }
 
+  resumeGame() {
+    this.isPaused = false;
+    console.log('Game resumed');
+  }
+
+  restartLevel() {
+    this.isPaused = false;
+    //this.gameService.startGame(LEVEL_1.board);
+    console.log('Level restarted');
+  }
+
+  openSettings() {
+    console.log('Settings opened (stub)');
+    // Add settings UI logic here
+  }
 }

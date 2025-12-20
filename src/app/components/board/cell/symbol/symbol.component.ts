@@ -5,8 +5,7 @@ import {CommonModule} from '@angular/common';
 import {AnimationMode, AnimationParams, SymbolAnimation} from '../../../../models/animation.model';
 import {AnimationService} from '../../../../services/animation.service';
 import {Subscription} from 'rxjs';
-import {TILE_SIZE_PX} from "../../../../utils/constants";
-import {BoardStyle} from "../../../../models/board.model";
+import {BoardStyle} from "../../../../models/display.model";
 
 
 @Component({
@@ -20,8 +19,7 @@ import {BoardStyle} from "../../../../models/board.model";
 })
 export class SymbolComponent implements OnInit, OnDestroy {
   @Input() symbol!: SymbolModel;
-  @Input() cellIndex!: number;
-  @Input() boardStyle!: BoardStyle;
+  @Input() tileSizePx!: number;
 
   private sub?: Subscription;
   currentAnimation: SymbolAnimation | null = null;
@@ -37,15 +35,6 @@ export class SymbolComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.sub?.unsubscribe();
-  }
-
-
-  get x(): number {
-    return this.boardStyle.getCellPosition(this.cellIndex).x;
-  }
-
-  get y(): number {
-    return this.boardStyle.getCellPosition(this.cellIndex).y;
   }
 
   onAnimationDone(): void {
@@ -69,7 +58,10 @@ export class SymbolComponent implements OnInit, OnDestroy {
   }
 
   get params(): AnimationParams {
-    return this.currentAnimation?.params ?? {};
+    return {
+      ...this.currentAnimation?.params,
+      tileSizePx: this.tileSizePx
+    };
   }
 
   protected readonly AnimationRenderMode = AnimationMode;

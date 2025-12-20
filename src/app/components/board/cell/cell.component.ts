@@ -1,12 +1,14 @@
 import {Component, Input} from '@angular/core';
 import {Cell, CellType} from '../../../models/cell.model';
 import {CommonModule} from '@angular/common';
+import {SymbolComponent} from './symbol/symbol.component';
 
 
 @Component({
   selector: 'app-cell',
   imports: [
     CommonModule,
+    SymbolComponent,
   ],
   templateUrl: './cell.component.html',
   styleUrl: './cell.component.scss'
@@ -14,6 +16,7 @@ import {CommonModule} from '@angular/common';
 export class CellComponent {
   @Input() cell!: Cell;
   @Input() isSelected = false;
+  @Input() tileSizePx!: number;
 
   protected readonly CellType = CellType;
 }

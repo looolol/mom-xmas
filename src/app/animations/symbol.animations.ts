@@ -8,8 +8,8 @@ export const motionAnimation = trigger('motion', [
   })),
 
   state(AnimationMode.Move, style({
-    transform: 'translate({{x}}, {{y}}) scale(1)',
-  }), { params: { x: '0px', y: '0px' } }),
+    transform: 'translate(calc({{x}} * {{tileSizePx}}), calc({{y}} * {{tileSizePx}})) scale(1)',
+  }), { params: { x: '0px', y: '0px', tileSizePx: '64px' } }),
 
   state(AnimationMode.Creating, style({
     transform: 'translate(0, 0) scale(1)',

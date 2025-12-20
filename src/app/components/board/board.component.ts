@@ -1,47 +1,76 @@
-import {Component, EventEmitter, Input, OnChanges, Output, SimpleChanges} from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  EventEmitter, HostListener,
+  Input,
+  Output,
+  ViewChild
+} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {CellComponent} from './cell/cell.component';
-import {BoardState, BoardStyle} from '../../models/board.model';
+import {BoardState} from '../../models/board.model';
 import {Cell} from '../../models/cell.model';
-import {SymbolComponent} from './cell/symbol/symbol.component';
-import {TILE_SIZE_PX} from '../../utils/constants';
 
 @Component({
   selector: 'app-board',
   imports: [
     CommonModule,
     CellComponent,
-    SymbolComponent,
   ],
   templateUrl: './board.component.html',
   styleUrl: './board.component.scss'
 })
-export class BoardComponent implements OnChanges{
+export class BoardComponent implements AfterViewInit {
 
-  @Input() board!: BoardState | null;
+  @ViewChild('boardWrapper', { static: true }) boardWrapper!: ElementRef<HTMLDivElement>;
+
+  @Input()board!: BoardState | null;
   @Input() selectedCellIndex: number | null = null;
+
+  tileSizePx: number = 64;
+  private readonly GAP_PX = 4;
 
   @Output() cellClick = new EventEmitter<Cell>();
 
-  readonly cellSizePx = TILE_SIZE_PX;
-  readonly cellGapPx = 4;
-  readonly boardPaddingPx = 8;
 
-  boardStyle!: BoardStyle;
-
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (this.board) {
-      this.boardStyle = new BoardStyle(
-        this.cellSizePx,
-        this.cellGapPx,
-        this.boardPaddingPx,
-        this.board.rows,
-        this.board.cols
-      );
-    }
+  ngAfterViewInit() {
+    this.calculateTileSize(); // init calc
   }
 
+  @HostListener('window:resize')
+  onResize() {
+    this.calculateTileSize();
+  }
+
+
+  calculateTileSize() {
+    if (!this.boardWrapper || !this.board) return;
+
+    const container = this.boardWrapper.nativeElement;
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+
+    console.log('containerWidth', containerWidth);
+    console.log('containerHeight', containerHeight);
+
+    const cols = this.board.cols;
+    const rows = this.board.rows;
+
+    console.log('cols', cols);
+    console.log('rows', rows);
+
+    console.log('gap_px', this.GAP_PX);
+
+    const tileSizeWidth = (containerWidth - (cols - 1) * this.GAP_PX) / cols;
+    const tileSizeHeight = (containerHeight - (rows - 1) * this.GAP_PX) / rows;
+
+    console.log('tileSizeWidth', tileSizeWidth);
+    console.log('tileSizeHeight', tileSizeHeight);
+
+    this.tileSizePx = Math.floor(Math.min(tileSizeWidth, tileSizeHeight));
+    console.log('TileSizePx', this.tileSizePx);
+  }
 
   onCellClick(cell: Cell) {
     this.cellClick.emit(cell);

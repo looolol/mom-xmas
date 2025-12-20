@@ -1,9 +1,4 @@
 <div
-    class="symbol"
-    [style.left.px]="x"
-    [style.top.px]="y"
-    [style.width.px]="boardStyle.cellSizePx"
-    [style.height.px]="boardStyle.cellSizePx"
 >
     <div
         class="symbol-transform"
@@ -12,6 +7,8 @@
             params: params
         }"
         (@motion.done)="onAnimationDone()"
+        [style.width.px]="tileSizePx"
+        [style.height.px]="tileSizePx"
     >
         <div
             class="symbol-visual"
@@ -27,11 +24,11 @@
             >
                 <div
                     class="flash-overlay-star-white"
-                    [style.filter]="'drop-shadow(0 0 ' + (boardStyle.cellSizePx * 0.08) + 'px white)'"
+                    [style.filter]="'drop-shadow(0 0 ' + (tileSizePx * 0.08) + 'px white)'"
                 ></div>
                 <div
                     class="flash-overlay-star-gradient"
-                    [style.filter]="'drop-shadow(0 0 ' + (boardStyle.cellSizePx * 0.12) + 'px orange'"
+                    [style.filter]="'drop-shadow(0 0 ' + (tileSizePx * 0.12) + 'px orange)'"
                 ></div>
             </div>
         </div>

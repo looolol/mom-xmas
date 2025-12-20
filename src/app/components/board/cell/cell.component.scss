@@ -11,6 +11,7 @@
   font-size: clamp(16px, 2vw, 28px);  // responsive font size
   border-radius: $cell-border-radius-px;
   background-color: $cell-bg-color;
+  cursor: pointer;
 }
 
 .cell.selected {
@@ -27,5 +28,12 @@
 
 .cell.null {
   background-color: transparent;
+  pointer-events: none;
+}
+
+
+app-symbol {
+  position: absolute;
+  z-index: 10;
   pointer-events: none;
 }
