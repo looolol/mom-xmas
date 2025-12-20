@@ -9,6 +9,7 @@ import {LEVEL_1} from '../../levels/level1';
 import {Subject, takeUntil} from 'rxjs';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
+import {DialogService} from '../../services/dialog.service';
 
 @Component({
   selector: 'app-game-page',
@@ -39,12 +40,17 @@ export class GamePageComponent implements OnInit, OnDestroy {
   dialogMessage: string | null = null;
   notification: string | null = null;
 
+  get isTalking() {
+    return !!this.dialogMessage;
+  }
+
   private destroy$ = new Subject<void>();
 
 
   constructor(
     private gameService: GameService,
     private boardService: BoardService,
+    private dialogService: DialogService,
   ) { }
 
   ngOnInit() {
@@ -66,11 +72,20 @@ export class GamePageComponent implements OnInit, OnDestroy {
         this.canInteract = canInteract;
       });
 
+    this.dialogService.dialogText$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(dialog => {
+        this.dialogMessage = dialog;
+      });
+
+    this.dialogService.notifications$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(notification => {
+        this.notification = notification;
+      })
+
     this.gameService.startGame(LEVEL_1.board);
     this.calculateTileSize(); // init calc
-
-    this.dialogMessage = "Do YoUr LaUnDrY!!!";
-    this.notification = "Out of Moves !!!";
   }
 
   @HostListener('window:resize')

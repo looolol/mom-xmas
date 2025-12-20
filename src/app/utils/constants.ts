@@ -1,4 +1,6 @@
-export const SYMBOLS = ['🍒', '🍋', '🍇', '⭐', '🍬'];
+export const SYMBOLS = [
+  '🍪', '🌏', '🔥',  '🎠',  '⭐', '😈',
+];
 export const DEFAULT_SYMBOLS = SYMBOLS[0];
 
 export const MATCH_CHECK_DEPTH = 2;

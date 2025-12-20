@@ -5,6 +5,8 @@ import { BoardService } from './board.service';
 import { Cell } from '../models/cell.model';
 import { POINTS_PER_CELL } from '../utils/constants';
 import { GamePhase, gameModel } from '../models/game.model';
+import { DialogService } from './dialog.service';
+import {dialogLinesBySymbol} from "../models/dialog.model";
 
 @Injectable({
   providedIn: 'root'
@@ -21,7 +23,12 @@ export class GameService {
     map(phase => phase === GamePhase.Idle)
   );
 
-  constructor(private boardService: BoardService) { }
+
+  constructor(
+      private boardService: BoardService,
+      private dialogService: DialogService,
+  ) { }
+
 
   private setPhase(next: GamePhase) {
     const phase = this._phase$.getValue();
@@ -126,7 +133,33 @@ export class GameService {
       const newSymbols = this.boardService.detectNewSymbols(clearedBoard, droppedBoard);
       await this.boardService.animateCreate(newSymbols);
 
+      this.triggerDialogForMatches(matches);
+
       matches = this.boardService.detectMatches(this.boardService.board);
     }
+  }
+
+  private triggerDialogForMatches(matches: Cell[]) {
+    if (matches.length === 0) return;
+
+    const countBySymbol = matches.reduce<Record<string, number>>((acc, cell) => {
+      const symbolKind = cell.getSymbolKind();
+      if (!symbolKind) return acc;
+      acc[symbolKind] = (acc[symbolKind] || 0) + 1;
+      return acc;
+    }, {});
+
+    const [topSymbol] = Object.entries(countBySymbol).sort((a, b) => b[1] - a[1])[0] ?? [];
+    if (!topSymbol) return;
+
+    const lines = dialogLinesBySymbol[topSymbol];
+    if (!lines || lines.length === 0) return;
+
+    const validLines = lines.filter(line => Math.random() < line.chance);
+    if (validLines.length === 0) return;
+
+    const chosenLine = validLines[Math.floor(Math.random() * validLines.length)];
+
+    this.dialogService.showDialog(chosenLine.text, 4000);
   }
 }

@@ -109,8 +109,6 @@ export class BoardService {
     const offset = getDirectionDisplayOffset(swapDir);
     const oppositeOffset = getDirectionDisplayOffset(oppositeDir);
 
-    console.log('offset', offset);
-
     await this.animationService.play(
       [
         {

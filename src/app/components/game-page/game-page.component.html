@@ -19,8 +19,9 @@
 
   <div class="bottom-bar">
     <section class="side-panel">
+
       <!-- Left column: avatar -->
-      <div class="panel-avatar">
+      <div class="panel-avatar" [class.bounce]="isTalking">
         <img
           src="assets/avatars/mom-droid.png"
           alt="Droid Avatar"
@@ -30,11 +31,11 @@
 
       <!-- Right column: stacked content -->
       <div class="panel-right">
-        <div class="panel-content dialog-area" *ngIf="dialogMessage">
+        <div class="panel-content dialog" *ngIf="dialogMessage">
           {{ dialogMessage }}
         </div>
 
-        <div class="panel-content notifications" *ngIf="dialogMessage">
+        <div class="panel-content notifications" *ngIf="notification">
           {{ notification }}
         </div>
       </div>

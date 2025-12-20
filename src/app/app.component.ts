@@ -7,7 +7,6 @@ import {GamePageComponent} from './components/game-page/game-page.component';
   selector: 'app-root',
   imports: [
     RouterOutlet,
-    BoardComponent,
     GamePageComponent,
   ],
   templateUrl: './app.component.html',
