@@ -10,6 +10,8 @@ import {Subject, takeUntil} from 'rxjs';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {DialogService} from '../../services/dialog.service';
+import {EventService} from '../../services/event.service';
+import {GameEventType} from '../../models/event.model';
 
 @Component({
   selector: 'app-game-page',
@@ -40,6 +42,8 @@ export class GamePageComponent implements OnInit, OnDestroy {
   dialogMessage: string | null = null;
   notification: string | null = null;
 
+  isBurning = false;
+
   get isTalking() {
     return !!this.dialogMessage;
   }
@@ -51,6 +55,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
     private gameService: GameService,
     private boardService: BoardService,
     private dialogService: DialogService,
+    private eventService: EventService,
   ) { }
 
   ngOnInit() {
@@ -83,6 +88,20 @@ export class GamePageComponent implements OnInit, OnDestroy {
       .subscribe(notification => {
         this.notification = notification;
       })
+
+    this.eventService.events$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(event => {
+        switch (event.type) {
+          case GameEventType.BURN:
+            this.isBurning = true;
+            break;
+
+          case GameEventType.BURN_CLEAR:
+            this.isBurning = false;
+            break;
+        }
+      });
 
     this.gameService.startGame(LEVEL_1.board);
     this.calculateTileSize(); // init calc

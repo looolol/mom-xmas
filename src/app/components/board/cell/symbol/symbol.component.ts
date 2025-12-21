@@ -7,6 +7,8 @@ import {AnimationService} from '../../../../services/animation.service';
 import {Subscription} from 'rxjs';
 import {EventService} from "../../../../services/event.service";
 import {randomSymbol} from "../../../../utils/random-symbol";
+import {GameEventType} from "../../../../models/event.model";
+import {BURNT_SYMBOLS} from "../../../../utils/constants";
 
 
 @Component({
@@ -27,7 +29,9 @@ export class SymbolComponent implements OnInit, OnChanges, OnDestroy {
 
   private eventSub?: Subscription;
   displayedSymbol!: string;
+
   hearingLoss = false;
+  burning = false;
 
   constructor(
       private animationService: AnimationService,
@@ -43,14 +47,22 @@ export class SymbolComponent implements OnInit, OnChanges, OnDestroy {
     this.displayedSymbol = this.symbol.kind;
 
     this.eventSub = this.eventService.events$.subscribe(event =>{
-      if (event.type === 'HEARING_LOSS') {
-        this.hearingLoss = true;
-        this.updateDisplaySymbol();
+      switch (event.type) {
+        case GameEventType.HEARING:
+          this.hearingLoss = true;
+          break;
+        case GameEventType.HEARING_CLEAR:
+          this.hearingLoss = false;
+          break;
+        case GameEventType.BURN:
+          this.burning = true;
+          break;
+        case GameEventType.BURN_CLEAR:
+          this.burning = false;
+          break;
       }
-      else if (event.type === 'HEARING_LOSS_CLEAR') {
-        this.hearingLoss = false;
-        this.updateDisplaySymbol();
-      }
+
+      this.updateDisplaySymbol();
     })
   }
 
@@ -91,12 +103,17 @@ export class SymbolComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private updateDisplaySymbol() {
+    if (this.burning) {
+      this.displayedSymbol =
+          BURNT_SYMBOLS[this.symbol.kind] ?? this.symbol.kind;
+      return;
+    }
+
     if (this.hearingLoss) {
       this.displayedSymbol = randomSymbol();
     }
-    else {
-      this.displayedSymbol = this.symbol.kind;
-    }
+
+    this.displayedSymbol = this.symbol.kind;
   }
 
   protected readonly AnimationRenderMode = AnimationMode;

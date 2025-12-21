@@ -12,6 +12,7 @@
     >
         <div
             class="symbol-visual"
+            [class.burning]="burning"
             [@clearing]="clearingState"
             (@clearing.done)="onAnimationDone()"
         >
