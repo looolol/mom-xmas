@@ -4,6 +4,7 @@ export const LS_KEYS = {
 }
 
 export interface LeaderboardEntry {
+  uid: string,
   name: string;
   score: number;
   date: number;

@@ -6,6 +6,14 @@
   box-sizing: border-box;
 }
 
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px; /* or whatever fits your dialog */
+}
+
+
 h2 {
   flex-shrink: 0;
   margin: 0 0 12px 0;
