@@ -296,4 +296,21 @@ export class GameService {
     await this.resolveMatches();
     this.setPhase(GamePhase.Idle);
   }
+
+  async useBomb(): Promise<void> {
+    const board = this.boardService.board;
+    if (!board) return;
+
+    this.setPhase(GamePhase.Bomb);
+    const bomb: Cell[] = this.boardService.getBomb(board);
+
+    if (bomb.length === 0) {
+      console.log('No symbols to clear in bomb area');
+      return;
+    }
+
+    this.setPhase(GamePhase.Idle);
+    await this.resolveMatches(bomb);
+    this.setPhase(GamePhase.Idle);
+  }
 }

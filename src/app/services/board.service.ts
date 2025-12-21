@@ -133,6 +133,23 @@ export class BoardService {
     return new BoardState(board.rows, board.cols, newCells);
   }
 
+  getBomb(board: BoardState): Cell[] {
+    const centerRow = this.getRandomInt(1, board.rows - 2);
+    const centerCol = this.getRandomInt(1, board.cols - 2);
+
+    const cellsToClear = [];
+    for (let r = centerRow - 1; r <= centerRow + 1; r++) {
+      for (let c = centerCol - 1; c <= centerCol + 1; c++) {
+        const cell = board.getCell(new Position(r, c));
+        if (cell && cell.symbol) {
+          cellsToClear.push(cell);
+        }
+      }
+    }
+
+    return cellsToClear;
+  }
+
   /**
    * --- Animation Methods ---
    */
@@ -356,8 +373,6 @@ export class BoardService {
     return newBoard;
   }
 
-
-
   detectNewSymbols(oldBoard: BoardState, newBoard: BoardState): Cell[] {
     const oldSymbolIds = new Set<string>();
 
@@ -368,5 +383,10 @@ export class BoardService {
     return newBoard.cells.filter(cell => {
       return cell.symbol && !oldSymbolIds.has(cell.symbol.id);
     })
+  }
+
+
+  private getRandomInt(min: number, max: number) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 }

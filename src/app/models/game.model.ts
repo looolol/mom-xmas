@@ -6,6 +6,7 @@ export enum GamePhase {
   ResolvingDrop = 'ResolvingDrop',
   Filling = 'Filling',
   Shuffling = 'Shuffling',
+  Bomb = "Bomb",
   GameOver = 'GameOver',
 }
 
@@ -19,6 +20,7 @@ export const VALID_TRANSITIONS: Record<GamePhase, readonly GamePhase[]> = {
     GamePhase.Swapping,
     GamePhase.ResolvingMatches,
     GamePhase.Shuffling,
+    GamePhase.Bomb,
     GamePhase.GameOver
   ],
   [GamePhase.Swapping]: [
@@ -37,6 +39,10 @@ export const VALID_TRANSITIONS: Record<GamePhase, readonly GamePhase[]> = {
     GamePhase.Idle,
   ],
   [GamePhase.Shuffling]: [
+    GamePhase.ResolvingMatches,
+    GamePhase.Idle,
+  ],
+  [GamePhase.Bomb]: [
     GamePhase.ResolvingMatches,
     GamePhase.Idle,
   ],

@@ -182,7 +182,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
   async onBombClick() {
     if (!this.canInteract) return;
 
-    console.log('BOMB CLICK');
+    await this.gameService.useBomb();
   }
 
   resumeGame() {
