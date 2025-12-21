@@ -16,6 +16,7 @@ import {PlayerService} from '../../services/player.service';
 import {MatDialog, MatDialogModule} from '@angular/material/dialog';
 import {LeaderboardComponent} from '../leaderboard/leaderboard.component';
 import {SettingsComponent} from '../settings/settings.component';
+import {AuthService} from '../../services/auth.service';
 
 @Component({
   selector: 'app-game-page',
@@ -58,6 +59,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
 
   constructor(
+    private authService: AuthService,
     private playerService: PlayerService,
     protected gameService: GameService,
     private boardService: BoardService,
@@ -66,7 +68,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
     private dialog: MatDialog,
   ) { }
 
-  ngOnInit() {
+  async ngOnInit() {
     this.boardService.board$
       .pipe(takeUntil(this.destroy$))
       .subscribe(board => {
@@ -116,6 +118,8 @@ export class GamePageComponent implements OnInit, OnDestroy {
             break;
         }
       });
+
+    await this.authService.init();
 
     if (!this.playerService.getPlayerName()) {
       this.promptSettingsAndStartGame();
@@ -197,6 +201,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
     // Attempt swap
     await this.gameService.playerSwap(this.selectedCell, cell);
+    this.playerService.addScore(this.score, this.currentGameSessionId);
 
     // clear selection after swap attempt
     this.selectedCell = null;

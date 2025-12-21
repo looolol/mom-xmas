@@ -1,7 +1,11 @@
 <div class="leaderboard-dialog">
   <h2>Leaderboard</h2>
 
-  <div class="table-container mat-elevation-z8">
+  <div *ngIf="loading" class="spinner-container">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <div *ngIf="!loading" class="table-container mat-elevation-z8">
     <table mat-table [dataSource]="leaderboard">
 
       <!-- Name Column -->
