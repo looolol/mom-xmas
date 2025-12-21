@@ -22,9 +22,23 @@ export class GameService {
   private readonly _score$ = new BehaviorSubject<number>(0);
   readonly score$ = this._score$.asObservable();
 
+
   readonly canInteract$ = this.phase$.pipe(
     map(phase => phase === GamePhase.Idle)
   );
+
+  private readonly _shuffleCount$ = new BehaviorSubject<number>(3);
+  readonly shuffleCount$ = this._shuffleCount$.asObservable();
+
+  private readonly _bombCount$ = new BehaviorSubject<number>(3);
+  readonly bombCount$ = this._bombCount$.asObservable();
+
+  private setShuffleCount(value: number) {
+    this._shuffleCount$.next(value);
+  }
+  private setBombCount(value: number) {
+    this._bombCount$.next(value);
+  }
 
 
   constructor(
@@ -154,6 +168,10 @@ export class GameService {
             await this.triggerCarousel();
           }
         }
+        if (this.containsSymbol(matches, '⭐')) {
+          this.dialogService.showNotifications("Awarded 🔀");
+          this.setShuffleCount(this._shuffleCount$.getValue() + 1);
+        }
       }
       this.checkComboEvents(comboCount, matches);
 
@@ -189,10 +207,10 @@ export class GameService {
     // Bad Combo
     if (comboCount === 1) {
       const eventChance = Math.random();
-      if (eventChance < 0.10) {
+      if (eventChance < 0.1) {
 
         // Hearing event
-        if (eventChance < 0.10) {
+        if (eventChance < 0.1) {
           if (this.eventService.emit({ type: GameEventType.HEARING, durationMs: 10000})) {
             this.dialogService.showNotifications(GameEventDialog.HEARING, 5000);
             return; // Priority
@@ -207,7 +225,8 @@ export class GameService {
     } else if (comboCount === 4) {
       this.dialogService.showNotifications("Combo x4! Crushing it!", 3000);
     } else if (comboCount >= 5) {
-      this.dialogService.showNotifications("Combo x5! Legendary!", 3000);
+      this.dialogService.showNotifications("Combo x5! Legendary! Awarded 💣", 3000);
+      this.setBombCount(this._bombCount$.getValue() + 1);
       return; // Priority
     }
 
@@ -284,6 +303,11 @@ export class GameService {
     if (!board) return;
 
     this.setPhase(GamePhase.Shuffling);
+    if (this._shuffleCount$.getValue() <= 0) {
+      this.dialogService.showNotifications("No shuffles available!", 3000);
+      this.setPhase(GamePhase.Idle);
+      return;
+    }
 
     await this.boardService.animateFadeOut(board);
 
@@ -291,26 +315,38 @@ export class GameService {
     this.boardService.updateBoard(shuffledBoard);
 
     await this.boardService.animateFadeIn(shuffledBoard);
+    this.setShuffleCount(this._shuffleCount$.getValue() - 1);
 
     this.setPhase(GamePhase.Idle);
     await this.resolveMatches();
     this.setPhase(GamePhase.Idle);
   }
 
-  async useBomb(): Promise<void> {
+  async useBomb(): Promise<boolean> {
     const board = this.boardService.board;
-    if (!board) return;
+    if (!board) return false;
 
     this.setPhase(GamePhase.Bomb);
+    if (this._bombCount$.getValue() <= 0) {
+      this.dialogService.showDialog("Aw, FORK", 3000);
+      this.dialogService.showNotifications("No bombs available!", 5000);
+      this.setPhase(GamePhase.Idle);
+      return false;
+    }
+
     const bomb: Cell[] = this.boardService.getBomb(board);
 
     if (bomb.length === 0) {
       console.log('No symbols to clear in bomb area');
-      return;
+      this.setPhase(GamePhase.Idle);
+      return false;
     }
+
+    this.setBombCount(this._bombCount$.getValue() - 1);
 
     this.setPhase(GamePhase.Idle);
     await this.resolveMatches(bomb);
     this.setPhase(GamePhase.Idle);
+    return true;
   }
 }

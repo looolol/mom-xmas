@@ -16,12 +16,12 @@ export interface GameEvent {
 
 
 export enum GameEventDialog {
-  HEARING = '👂🏻🚫: What??? Pieces are misheard for a while...',
+  HEARING = '👂🏻🚫: What??? I cant hear',
   HEARING_CLEAR = '👂🏻: Hearing restored.',
   BURN = '🍪🔥: MOM THE COOKIES!!!',
   BURN_CLEAR = '🧯💨 🧯💨 🧯💨',
   CAROUSEL = '🎠🎶: RIDE STARTED',
-  CAROUSEL_CLEAR_DIALOG = '🤢 Everything stops spinning...',
+  CAROUSEL_CLEAR_DIALOG = '😁: That was fun!',
   CAROUSEL_CLEAR = '🎠: RIDE OVER',
 
 }

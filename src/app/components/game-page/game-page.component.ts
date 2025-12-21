@@ -33,7 +33,6 @@ export class GamePageComponent implements OnInit, OnDestroy {
   canInteract: boolean = false;
   isPaused: boolean = false;
   score: number = 0;
-  movesLeft: number = 20;
 
 
   tileSizePx: number = 32;
@@ -42,7 +41,9 @@ export class GamePageComponent implements OnInit, OnDestroy {
   dialogMessage: string | null = null;
   notification: string | null = null;
 
+  isHearing = true;
   isBurning = false;
+  bombActive = false;
 
   get isTalking() {
     return !!this.dialogMessage;
@@ -52,7 +53,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
 
   constructor(
-    private gameService: GameService,
+    protected gameService: GameService,
     private boardService: BoardService,
     private dialogService: DialogService,
     private eventService: EventService,
@@ -96,9 +97,15 @@ export class GamePageComponent implements OnInit, OnDestroy {
           case GameEventType.BURN:
             this.isBurning = true;
             break;
-
           case GameEventType.BURN_CLEAR:
             this.isBurning = false;
+            break;
+
+          case GameEventType.HEARING:
+            this.isHearing = false;
+            break;
+          case GameEventType.HEARING_CLEAR:
+            this.isHearing = true;
             break;
         }
       });
@@ -176,13 +183,20 @@ export class GamePageComponent implements OnInit, OnDestroy {
   async onShuffleClick() {
     if (!this.canInteract) return;
 
+    this.dialogService.showDialog("📞: Can I get a Board Refund?", 3000);
+    this.dialogService.showNotifications("🔀 Shuffling...", 5000);
     await this.gameService.shuffleBoard();
   }
 
   async onBombClick() {
     if (!this.canInteract) return;
+    this.bombActive = true;
+
+    this.dialogService.showDialog("⚡️: UNLIMITED MOM POWER!!", 3000);
+    this.dialogService.showNotifications("💣 Using Bomb...", 5000);
 
     await this.gameService.useBomb();
+    this.bombActive = false;
   }
 
   resumeGame() {
