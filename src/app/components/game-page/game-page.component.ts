@@ -119,13 +119,6 @@ export class GamePageComponent implements OnInit, OnDestroy {
     this.calculateTileSize();
   }
 
-
-  ngOnDestroy() {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-
   calculateTileSize() {
     if (!this.boardArea || !this.board) return;
 
@@ -141,6 +134,12 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
     this.tileSizePx = Math.floor(Math.min(tileSizeWidth, tileSizeHeight));
   }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
 
   async onCellClick(cell: Cell) {
     if (!this.canInteract) return;
@@ -166,35 +165,21 @@ export class GamePageComponent implements OnInit, OnDestroy {
     }
 
     // Attempt swap
-    await this.onPlayerSwap(this.selectedCell, cell);
+    await this.gameService.playerSwap(this.selectedCell, cell);
 
     // clear selection after swap attempt
     this.selectedCell = null;
   }
 
-  async onPlayerSwap(cellA: Cell, cellB: Cell) {
-    const success = await this.gameService.playerSwap(cellA, cellB);
-    if (!success) {
-      this.dialogService.showDialog("Bite Me!")
-      this.dialogService.showNotifications("No matches.");
-    }
-  }
-
   async onShuffleClick() {
     if (!this.canInteract) return;
-
-    this.dialogService.showDialog("📞: Can I get a Board Refund?", 3000);
-    this.dialogService.showNotifications("🔀 Shuffling...", 5000);
     await this.gameService.shuffleBoard();
   }
 
   async onBombClick() {
     if (!this.canInteract) return;
+
     this.bombActive = true;
-
-    this.dialogService.showDialog("⚡️: UNLIMITED MOM POWER!!", 3000);
-    this.dialogService.showNotifications("💣 Using Bomb...", 5000);
-
     await this.gameService.useBomb();
     this.bombActive = false;
   }

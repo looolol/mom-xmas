@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import {BehaviorSubject} from 'rxjs';
+import {UI_DISPLAY_DURATIONS} from '../models/ui-messages.model';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +14,7 @@ export class DialogService {
   notifications$ = this._notifications$.asObservable();
 
 
-  showDialog(text: string, durationMs = 3000) {
+  showDialog(text: string, durationMs = UI_DISPLAY_DURATIONS.medium) {
    this._dialogText$.next(text);
    setTimeout(() => this.clearDialog(), durationMs);
   }
@@ -23,7 +24,7 @@ export class DialogService {
   }
 
 
-  showNotifications(text: string, durationMs = 3000) {
+  showNotifications(text: string, durationMs = UI_DISPLAY_DURATIONS.long) {
     this._notifications$.next(text);
     setTimeout(() => this.clearNotifications(), durationMs)
   }

@@ -1,3 +1,5 @@
+import {UI_STRINGS} from './ui-messages.model';
+
 export enum GameEventType {
   HEARING = 'hearing',
   HEARING_CLEAR = 'hearing_clear',
@@ -5,23 +7,94 @@ export enum GameEventType {
   BURN_CLEAR = 'burn_clear',
   CAROUSEL = 'carousel',
   CAROUSEL_CLEAR = 'carousel_clear',
+
+  BOMB = 'bomb',
+  BOMB_CLEAR = 'bomb_clear',
+
+  SHUFFLE = 'shuffle',
+  SHUFFLE_CLEAR = 'shuffle_clear',
 }
 
 
 export interface GameEvent {
+  chance: number;
   type: GameEventType;
-  payload?: any;
+  notif?: string;
   durationMs?: number;
+  payload?: any;
 }
 
 
-export enum GameEventDialog {
-  HEARING = '👂🏻🚫: What??? I cant hear',
-  HEARING_CLEAR = '👂🏻: Hearing restored.',
-  BURN = '🍪🔥: MOM THE COOKIES!!!',
-  BURN_CLEAR = '🧯💨 🧯💨 🧯💨',
-  CAROUSEL = '🎠🎶: RIDE STARTED',
-  CAROUSEL_CLEAR_DIALOG = '😁: That was fun!',
-  CAROUSEL_CLEAR = '🎠: RIDE OVER',
+export const EVENT_DURATIONS = {
+  none: 0,
+  short: 3_000,
+  medium: 5_000,
+  long: 10_000,
+};
 
-}
+
+export const GAME_EVENTS: Record<GameEventType, GameEvent> = {
+  [GameEventType.HEARING]: {
+    chance: 0.1,
+    type: GameEventType.HEARING,
+    durationMs: EVENT_DURATIONS.long,
+    notif: UI_STRINGS.hearing,
+  },
+  [GameEventType.BURN]: {
+    chance: 0.25,
+    type: GameEventType.BURN,
+    durationMs: EVENT_DURATIONS.long,
+    notif: UI_STRINGS.burn,
+  },
+  [GameEventType.CAROUSEL]: {
+    chance: 0.25,
+    type: GameEventType.CAROUSEL,
+    durationMs: EVENT_DURATIONS.medium,
+    notif: UI_STRINGS.carousel,
+  },
+
+  [GameEventType.BOMB]: {
+    chance: 1,
+    type: GameEventType.BOMB,
+    durationMs: EVENT_DURATIONS.medium,
+    notif: UI_STRINGS.bomb_notif,
+  },
+  [GameEventType.SHUFFLE]: {
+    chance: 1,
+    type: GameEventType.SHUFFLE,
+    durationMs: EVENT_DURATIONS.medium,
+    notif: UI_STRINGS.shuffle_notif,
+  },
+
+
+  [GameEventType.HEARING_CLEAR]: {
+    chance: 1,
+    type: GameEventType.HEARING_CLEAR,
+    durationMs: EVENT_DURATIONS.none,
+    notif: UI_STRINGS.hearing_clear,
+  },
+  [GameEventType.BURN_CLEAR]: {
+    chance: 1,
+    type: GameEventType.BURN_CLEAR,
+    durationMs: EVENT_DURATIONS.none,
+    notif: UI_STRINGS.burn_clear
+  },
+  [GameEventType.CAROUSEL_CLEAR]: {
+    chance: 1,
+    type: GameEventType.CAROUSEL_CLEAR,
+    durationMs: EVENT_DURATIONS.none,
+    notif: UI_STRINGS.carousel_clear,
+  },
+  [GameEventType.BOMB_CLEAR]: {
+    chance: 1,
+    type: GameEventType.BOMB_CLEAR,
+    durationMs: EVENT_DURATIONS.none,
+  },
+  [GameEventType.SHUFFLE_CLEAR]: {
+    chance: 1,
+    type: GameEventType.SHUFFLE_CLEAR,
+    durationMs: EVENT_DURATIONS.none,
+  }
+};
+
+export const clearTypeKey = (type: GameEventType) => (type + '_clear') as GameEventType;
