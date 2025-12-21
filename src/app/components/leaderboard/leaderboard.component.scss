@@ -1,0 +1,29 @@
+.leaderboard-dialog {
+  display: flex;
+  flex-direction: column;
+  height: 500px; /* or whatever fits your dialog */
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+h2 {
+  flex-shrink: 0;
+  margin: 0 0 12px 0;
+}
+
+.table-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+table {
+  width: 100%;
+  min-width: 300px; /* optional, to keep table readable */
+}
+
+
+button {
+  flex-shrink: 0;
+  align-self: flex-end;
+}

@@ -10,20 +10,13 @@ export const BURNT_SYMBOLS: Record<string, string> = {
   '⭐': '💥',
   '😈': '😡',
 }
-export const DEFAULT_SYMBOLS = SYMBOLS[0];
+
+export const DIALOG_CHANCE = 0.25;
+
+export const SPECIAL_EVENT_CHANCE = 0.1;
 
 export const MATCH_CHECK_DEPTH = 2;
 
-export const TILE_SIZE_PX = getTileSizePx();
-
 export const POINTS_PER_CELL = 10;
 
-function getTileSizePx(): number {
-  const width = window.innerWidth;
-
-  if (width < 360) return 28;  // very small phones
-  if (width < 480) return 32;  // small phones
-  if (width < 768) return 40;  // tablets in portrait
-  if (width < 1024) return 48; // tablets/large phones landscape
-  return 64;                   // desktops/large tablets
-}
+export const LEADERBOARD_ENTRIES = 25;

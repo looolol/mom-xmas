@@ -3,12 +3,19 @@ import {BehaviorSubject, map} from 'rxjs';
 import {BoardConfig} from '../models/board.model';
 import {BoardService} from './board.service';
 import {Cell} from '../models/cell.model';
-import {POINTS_PER_CELL} from '../utils/constants';
+import {
+  DIALOG_CHANCE,
+  POINTS_PER_CELL,
+  SPECIAL_EVENT_CHANCE
+} from '../utils/constants';
 import {gameModel, GamePhase} from '../models/game.model';
 import {DialogService} from './dialog.service';
 import {dialogLinesBySymbol} from "../models/dialog.model";
 import {EventService} from "./event.service";
-import {GameEventType} from "../models/event.model";
+import {GAME_EVENTS, GameEventType} from "../models/event.model";
+import {Dir} from "../models/direction.model";
+import {UI_STRINGS, UI_DISPLAY_DURATIONS} from '../models/ui-messages.model';
+import {PlayerService} from './player.service';
 
 @Injectable({
   providedIn: 'root'
@@ -21,15 +28,30 @@ export class GameService {
   private readonly _score$ = new BehaviorSubject<number>(0);
   readonly score$ = this._score$.asObservable();
 
+
   readonly canInteract$ = this.phase$.pipe(
     map(phase => phase === GamePhase.Idle)
   );
 
+  private readonly _shuffleCount$ = new BehaviorSubject<number>(1);
+  readonly shuffleCount$ = this._shuffleCount$.asObservable();
+
+  private readonly _bombCount$ = new BehaviorSubject<number>(1);
+  readonly bombCount$ = this._bombCount$.asObservable();
+
+  private setShuffleCount(value: number) {
+    this._shuffleCount$.next(value);
+  }
+  private setBombCount(value: number) {
+    this._bombCount$.next(value);
+  }
+
 
   constructor(
-      private boardService: BoardService,
-      private eventService: EventService,
-      private dialogService: DialogService,
+    private playerService: PlayerService,
+    private boardService: BoardService,
+    private eventService: EventService,
+    private dialogService: DialogService,
   ) { }
 
 
@@ -50,8 +72,8 @@ export class GameService {
     this._score$.next(value);
   }
 
-  addScore(matches: Cell[]) {
-    this.score = this.score + matches.length * POINTS_PER_CELL;
+  addScore(matches: Cell[], combo: number) {
+    this.score = this.score + matches.length * POINTS_PER_CELL * combo;
   }
 
   async startGame(config: BoardConfig) {
@@ -62,7 +84,6 @@ export class GameService {
 
     this.setPhase(GamePhase.Idle);
     await this.resolveMatches();
-    this.setPhase(GamePhase.Idle);
   }
 
   /**
@@ -72,7 +93,6 @@ export class GameService {
    */
   async playerSwap(a: Cell, b: Cell): Promise<boolean> {
     if (this._phase$.getValue() !== GamePhase.Idle) return false;
-
     const board = this.boardService.board;
     if (!board) return false;
 
@@ -96,6 +116,9 @@ export class GameService {
     const matches = this.boardService.detectMatches(swappedBoard);
     if (matches.length === 0) {
       // No matches: revert swap back visually and logically
+      this.dialogService.showDialog(UI_STRINGS.no_matches_dialog, UI_DISPLAY_DURATIONS.medium)
+      this.dialogService.showNotifications(UI_STRINGS.no_matches_notification, UI_DISPLAY_DURATIONS.long);
+
       await this.boardService.animateSwap(
         swappedBoard.getCell(a.pos)!,
         swappedBoard.getCell(b.pos)!,
@@ -108,7 +131,6 @@ export class GameService {
 
     // Matches detected: resolve them
     await this.resolveMatches();
-    this.setPhase(GamePhase.Idle);
     return true;
   }
 
@@ -127,7 +149,7 @@ export class GameService {
 
       const clearedBoard = this.boardService.clearCells(this.boardService.board!, matches);
       this.boardService.updateBoard(clearedBoard);
-      this.addScore(matches);
+      this.addScore(matches, comboCount);
 
       this.setPhase(GamePhase.ResolvingDrop);
       const droppedBoard = this.boardService.applyGravity(clearedBoard!);
@@ -138,17 +160,32 @@ export class GameService {
       const newSymbols = this.boardService.detectNewSymbols(clearedBoard, droppedBoard);
       await this.boardService.animateCreate(newSymbols);
 
-      if (this.containsSymbol(matches, '🍪')) {
-        if (this.eventService.emit({ type: GameEventType.BURN, durationMs: 10000})) {
-          this.dialogService.showNotifications('MOM THE COOKIES!!!', 5000);
-        }
+      const dialogChance = Math.random();
+      if (dialogChance < DIALOG_CHANCE) {
+        this.triggerDialogForMatches(matches);
       }
 
-      this.triggerDialogForMatches(matches);
+      const eventChance = Math.random();
+      if (eventChance < SPECIAL_EVENT_CHANCE) {
+        if (this.containsSymbol(matches, '🍪')) {
+          this.tryTriggerEvent(GameEventType.BURN);
+        }
+        if (this.containsSymbol(matches, '🎠')) {
+          if (this.tryTriggerEvent(GameEventType.CAROUSEL)) {
+            await this.triggerCarousel();
+          }
+        }
+        if (this.containsSymbol(matches, '⭐')) {
+          this.dialogService.showNotifications(UI_STRINGS.add_bomb, UI_DISPLAY_DURATIONS.long);
+          this.setBombCount(this._bombCount$.getValue() + 1);
+        }
+      }
       this.checkComboEvents(comboCount, matches);
 
       matches = this.boardService.detectMatches(this.boardService.board);
     }
+
+    this.setPhase(GamePhase.Idle);
   }
 
   private triggerDialogForMatches(matches: Cell[]) {
@@ -165,40 +202,31 @@ export class GameService {
     if (!topSymbol) return;
 
     const lines = dialogLinesBySymbol[topSymbol];
-    if (!lines || lines.length === 0) return;
+    if (!lines?.length) return;
 
-    const validLines = lines.filter(line => Math.random() < line.chance);
-    if (validLines.length === 0) return;
+    const chosenLine = lines[Math.floor(Math.random() * lines.length)];
 
-    const chosenLine = validLines[Math.floor(Math.random() * validLines.length)];
-
-    this.dialogService.showDialog(chosenLine.text, 4000);
+    this.dialogService.showDialog(chosenLine, UI_DISPLAY_DURATIONS.medium);
   }
 
   private checkComboEvents(comboCount: number, matches: Cell[]) {
     // Bad Combo
     if (comboCount === 1) {
-      const eventChance = Math.random();
-      if (eventChance < 0.10) {
-
-        // Hearing event
-        if (eventChance < 0.10) {
-          if (this.eventService.emit({ type: GameEventType.HEARING, durationMs: 10000})) {
-            this.dialogService.showNotifications('What??? Symbols are misheard for a while...', 5000);
-            return; // Priority
-          }
-        }
+      if (this.tryTriggerEvent(GameEventType.HEARING)) {
+        return;
       }
     }
 
     // Combo dialog every 3 combos
     if (comboCount === 3) {
-      this.dialogService.showNotifications("Combo x3! Nice streak!", 3000);
+      this.dialogService.showNotifications(UI_STRINGS.combo_3x, UI_DISPLAY_DURATIONS.medium);
     } else if (comboCount === 4) {
-      this.dialogService.showNotifications("Combo x4! Crushing it!", 3000);
+      this.dialogService.showNotifications(UI_STRINGS.combo_4x, UI_DISPLAY_DURATIONS.medium);
     } else if (comboCount >= 5) {
-      this.dialogService.showNotifications("Combo x5! Legendary!", 3000);
-      return; // Priority
+      this.dialogService.showNotifications(UI_STRINGS.combo_5x, UI_DISPLAY_DURATIONS.medium);
+      // 5x adds a shuffle
+      this.setShuffleCount(this._shuffleCount$.getValue() + 1);
+      return;
     }
 
     // Check for big matches (length >= 5)
@@ -206,7 +234,7 @@ export class GameService {
     const bigMatches = clusters.filter(cluster => cluster.length >= 5);
 
     if (bigMatches.length > 0) {
-      this.dialogService.showNotifications("Big Match! Wow!", 3000);
+      this.dialogService.showNotifications(UI_STRINGS.big_match, UI_DISPLAY_DURATIONS.medium);
     }
   }
 
@@ -246,8 +274,90 @@ export class GameService {
     return clusters;
   }
 
+  private async triggerCarousel(): Promise<void> {
+    while (this.eventService.currentEvent === GameEventType.CAROUSEL) {
+      const board = this.boardService.board;
+      if (!board) return;
+
+      await this.boardService.animateCarousel(board);
+
+      let newBoard = board;
+      for (let row = 0; row < board.rows; row++) {
+        const dir = row % 2 === 0 ? Dir.RIGHT : Dir.LEFT;
+        newBoard = this.boardService.rotateRow(newBoard, row, dir);
+      }
+      this.boardService.updateBoard(newBoard);
+
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+  }
+
   private containsSymbol(matches: Cell[], kind: string): boolean {
     return matches.some(cell => cell.getSymbolKind() === kind);
   }
 
+
+  async shuffleBoard(): Promise<void> {
+    const board = this.boardService.board;
+    if (!board) return;
+
+    if (this._shuffleCount$.getValue() <= 0) {
+      this.dialogService.showDialog(UI_STRINGS.no_powerups, UI_DISPLAY_DURATIONS.medium);
+      this.dialogService.showNotifications(UI_STRINGS.no_shuffles, UI_DISPLAY_DURATIONS.long);
+      this.setPhase(GamePhase.Idle);
+      return;
+    }
+
+    if (!this.eventService.emit(GAME_EVENTS[GameEventType.SHUFFLE])) {
+      this.dialogService.showNotifications(UI_STRINGS.not_now, UI_DISPLAY_DURATIONS.long);
+      return;
+    }
+
+    this.setPhase(GamePhase.Shuffling);
+    this.dialogService.showDialog(UI_STRINGS.shuffle_dialog, UI_DISPLAY_DURATIONS.medium);
+    this.setShuffleCount(this._shuffleCount$.getValue() - 1);
+
+    await this.boardService.animateFadeOut(board);
+
+    const shuffledBoard = this.boardService.shuffleBoard(board);
+    this.boardService.updateBoard(shuffledBoard);
+
+    await this.boardService.animateFadeIn(shuffledBoard);
+
+    await this.resolveMatches();
+  }
+
+  async useBomb(): Promise<boolean> {
+    const board = this.boardService.board;
+    if (!board) return false;
+
+    if (this._bombCount$.getValue() <= 0) {
+      this.dialogService.showDialog(UI_STRINGS.no_powerups, UI_DISPLAY_DURATIONS.medium);
+      this.dialogService.showNotifications(UI_STRINGS.no_bombs, UI_DISPLAY_DURATIONS.long);
+      return false;
+    }
+
+    if (!this.eventService.emit(GAME_EVENTS[GameEventType.BOMB])) {
+      this.dialogService.showNotifications(UI_STRINGS.not_now, UI_DISPLAY_DURATIONS.long);
+      return false;
+    }
+
+    this.setPhase(GamePhase.Bomb);
+    this.dialogService.showDialog(UI_STRINGS.bomb_dialog, UI_DISPLAY_DURATIONS.medium);
+    this.setBombCount(this._bombCount$.getValue() - 1);
+
+    const bomb: Cell[] = this.boardService.getBomb(board);
+
+    await this.resolveMatches(bomb);
+    return true;
+  }
+
+  private tryTriggerEvent(type: GameEventType): boolean {
+    const gameEvent = GAME_EVENTS[type];
+    if (!gameEvent) return false;
+
+    if (Math.random() > gameEvent.chance) return false;
+
+    return this.eventService.emit(gameEvent);
+  }
 }

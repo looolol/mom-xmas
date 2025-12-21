@@ -16,6 +16,16 @@ export const motionAnimation = trigger('motion', [
     opacity: 1,
   })),
 
+  state(AnimationMode.FadeOut, style({
+    opacity: 0,
+    transform: 'scale(0.8)',
+  })),
+
+  state(AnimationMode.FadeIn, style({
+    opacity: 1,
+    transform: 'scale(1)'
+  })),
+
   transition(`${AnimationMode.None} => ${AnimationMode.Move}`, animate('300ms ease-in-out')),
   transition(`${AnimationMode.Move} => ${AnimationMode.None}`, animate('0ms')),
 
@@ -27,6 +37,19 @@ export const motionAnimation = trigger('motion', [
     })),
   ]),
   transition(`${AnimationMode.Creating} => ${AnimationMode.None}`, animate('0ms')),
+
+  transition(`${AnimationMode.None} => ${AnimationMode.FadeOut}`, [
+    animate('400ms ease-in')
+  ]),
+  transition(`${AnimationMode.FadeOut} => ${AnimationMode.None}`, [
+    animate('0ms')
+  ]),
+
+  transition(`${AnimationMode.None} => ${AnimationMode.FadeIn}`, [
+    style({ opacity: 0, transform: 'scale(0.8)' }),
+    animate('400ms ease-out', style({ opacity: 1, transform: 'scale(1)' }))
+  ]),
+  transition(`${AnimationMode.FadeIn} => ${AnimationMode.None}`, animate('0ms')),
 ]);
 
 
@@ -55,4 +78,15 @@ export const clearingAnimation = trigger('clearing', [
       style({ opacity: 0, filter: 'brightness(1)', offset: 1 }),
     ]))
   ]),
+]);
+
+
+export const fadeAnimation = trigger('fade', [
+  transition(':enter', [
+    style({ opacity: 0 }),
+    animate('400ms ease-out', style({ opacity: 1 }))
+  ]),
+  transition(':leave', [
+    animate('400ms ease-in', style({ opacity: 0 }))
+  ])
 ]);

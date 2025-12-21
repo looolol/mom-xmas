@@ -94,6 +94,62 @@ export class BoardService {
     return new BoardState(board.rows, board.cols, clearedCells);
   }
 
+  rotateRow(board: BoardState, row: number, dir: Dir.LEFT | Dir.RIGHT): BoardState {
+    const rowCells = board.getRow(row);
+    const symbols = rowCells.map(c => c.symbol);
+
+    const rotated =
+        dir === Dir.LEFT
+          ? [...symbols.slice(1), symbols[0]]
+          : [symbols[symbols.length - 1], ...symbols.slice(0, -1)];
+
+    const updated = rowCells.map((cell, i) =>
+      cell.withSymbol(rotated[i])
+    );
+
+    return board.updateCells(updated);
+  }
+
+  shuffleBoard(board: BoardState) {
+    if (!board) return board;
+
+    const symbols = board.cells
+      .filter(cell => cell.symbol)
+      .map(cell => cell.symbol!);
+
+    for (let i = symbols.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [symbols[i], symbols[j]] = [symbols[j], symbols[i]];
+    }
+
+    const newCells = board.cells.map(cell => {
+      if (cell.symbol) {
+        const newSymbol = symbols.pop()!;
+        return cell.withSymbol(newSymbol);
+      }
+      return cell;
+    });
+
+    return new BoardState(board.rows, board.cols, newCells);
+  }
+
+  getBomb(board: BoardState): Cell[] {
+    const centerRow = this.getRandomInt(1, board.rows - 2);
+    const centerCol = this.getRandomInt(1, board.cols - 2);
+
+    const cellsToClear = [];
+    for (let r = centerRow - 1; r <= centerRow + 1; r++) {
+      for (let c = centerCol - 1; c <= centerCol + 1; c++) {
+        const cell = board.getCell(new Position(r, c));
+        if (cell && cell.symbol) {
+          cellsToClear.push(cell);
+        }
+      }
+    }
+
+    return cellsToClear;
+  }
+
   /**
    * --- Animation Methods ---
    */
@@ -188,6 +244,52 @@ export class BoardService {
     await this.animationService.play(animations);
   }
 
+  async animateCarousel(board: BoardState) {
+    const animations = [];
+
+    for (let row = 0; row < board.rows; row++) {
+      const dir = row % 2 === 0 ? Dir.RIGHT : Dir.LEFT;
+      const cells = board.getRow(row).filter(c => c.symbol);
+
+      animations.push(...cells.map(cell => ({
+        symbolId: cell.symbol!.id,
+        renderMode: AnimationMode.Move,
+        params: {
+          x: dir === Dir.LEFT ? '-1px' : '1px',
+          y: '0px',
+        }
+      })));
+    }
+
+    await this.animationService.play(animations);
+  }
+
+  async animateFadeOut(board: BoardState) {
+    const cellsWithSymbols = board.cells.filter(c => c.symbol);
+
+    if (cellsWithSymbols.length === 0) return;
+
+    await this.animationService.play(
+      cellsWithSymbols.map(cell => ({
+        symbolId: cell.symbol!.id,
+        renderMode:AnimationMode.FadeOut,
+      }))
+    );
+  }
+
+  async animateFadeIn(board: BoardState) {
+    const cellsWithSymbols = board.cells.filter(c => c.symbol);
+
+    if (cellsWithSymbols.length === 0) return;
+
+    await this.animationService.play(
+      cellsWithSymbols.map(cell => ({
+        symbolId: cell.symbol!.id,
+        renderMode:AnimationMode.FadeIn,
+      }))
+    );
+  }
+
   // -- OTHER METHODS ----
   private pickSymbolForCell(board: BoardState, cell: Cell): string {
     const forbidden = new Set<string>();
@@ -271,8 +373,6 @@ export class BoardService {
     return newBoard;
   }
 
-
-
   detectNewSymbols(oldBoard: BoardState, newBoard: BoardState): Cell[] {
     const oldSymbolIds = new Set<string>();
 
@@ -283,5 +383,10 @@ export class BoardService {
     return newBoard.cells.filter(cell => {
       return cell.symbol && !oldSymbolIds.has(cell.symbol.id);
     })
+  }
+
+
+  private getRandomInt(min: number, max: number) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 }

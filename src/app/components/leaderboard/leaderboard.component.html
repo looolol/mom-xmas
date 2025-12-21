@@ -1,0 +1,33 @@
+<div class="leaderboard-dialog">
+  <h2>Leaderboard</h2>
+
+  <div class="table-container mat-elevation-z8">
+    <table mat-table [dataSource]="leaderboard">
+
+      <!-- Name Column -->
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef> Name </th>
+        <td mat-cell *matCellDef="let entry"> {{ entry.name }} </td>
+      </ng-container>
+
+      <!-- Score Column -->
+      <ng-container matColumnDef="score">
+        <th mat-header-cell *matHeaderCellDef> Score </th>
+        <td mat-cell *matCellDef="let entry"> {{ entry.score }} </td>
+      </ng-container>
+
+      <!-- Date Column -->
+      <ng-container matColumnDef="date">
+        <th mat-header-cell *matHeaderCellDef> Date </th>
+        <td mat-cell *matCellDef="let entry"> {{ entry.date | date:'shortDate' }} </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </div>
+
+  <button mat-raised-button color="primary" (click)="close()">
+    Close
+  </button>
+</div>

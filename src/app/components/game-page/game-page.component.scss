@@ -35,6 +35,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
   overflow: hidden;
 
   background-color: #3c3c54;
@@ -44,6 +45,43 @@
   padding: 12px;
   box-sizing: border-box;
 }
+
+.board-area.misheard {
+  filter:
+    blur(0.75px)
+    saturate(0.75)
+    contrast(0.9);
+
+  animation: boardSway 2s ease-in-out infinite;
+}
+
+.board-area.misheard::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+        rgba(255,255,255,0.05),
+        rgba(255,255,255,0.05)
+    );
+
+
+  opacity: 0.2;
+  animation: muffledWobble 1.8s ease-in-out infinite;
+}
+
+@keyframes muffledWobble {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(2px); }
+}
+
+@keyframes boardSway {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(1.5px); }
+}
+
 
 .board-area.burning {
   box-shadow:
@@ -108,6 +146,50 @@
   75%  { transform: translate(1px, 1px); }
   100% { transform: translate(0, 0); }
 }
+
+.lightning-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;       /* fixed position */
+  width: 100%;   /* cover the board exactly */
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+  z-index: 20;
+
+  background-image: url('/assets/lightning.webp');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+
+  animation: lightningFlicker 1.2s infinite ease-in-out;
+  transform: scaleY(-1); /* if still needed */
+}
+
+@keyframes lightningFlicker {
+  0%, 100% { opacity: 0.7; filter: brightness(1); }
+  50%      { opacity: 1; filter: brightness(1.5); }
+}
+
+
+@keyframes lightningSlide {
+  0% {
+    left: -150%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    left: 100%;
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
 
 .bottom-bar {
   display: flex;
@@ -226,24 +308,42 @@
 .game-footer {
   width: 100%;
   display: flex;
-  justify-content: space-around;
+  justify-content: center;
   align-items: center;
   gap: 16px;
 
-  .moves-left {
-    font-size: clamp(1rem, 3vw, 1.25rem);
-    font-weight: 600;
+  button {
+    margin-left: 8px;
+    position: relative;
   }
 
-  .power-ups {
-    button {
-      margin-left: 8px;
-    }
+  button.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+    cursor: default;
+  }
+
+  .count {
+    position: absolute;
+    top: -24px;
+    right: -12px;
+    background-color: #072ef1;
+    color: white;
+    font-size: 0.7rem;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    pointer-events: none;
+    user-select: none;
   }
 }
 
 
-.overlay.pause-menu {
+.overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -251,12 +351,17 @@
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.85);
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
   color: white;
   z-index: 2000;
   padding: 24px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.overlay.pause-menu {
+  flex-direction: column;
   text-align: center;
 
   h2 {

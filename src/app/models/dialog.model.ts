@@ -1,25 +1,31 @@
-export type DialogLine = {
-  chance: number;
-  text: string;
-};
-
-export const dialogLinesBySymbol: Record<string, DialogLine[]> = {
+export const dialogLinesBySymbol: Record<string, string[]> = {
   '🍪': [
-    { chance: 0.75, text: '🍪: Burnt Cookies &%#@!' },
+    '🍪: Burnt Cookies &%#@!',
   ],
   '🌏': [
-    { chance: 0.75, text: '🌏: My Team Lost... Again :(' },
+    '🌏: My Team Lost... Again :(',
   ],
   '🔥': [
-    { chance: 0.75, text: '👨🏼‍🍳: Your a Doughnut!' },
+    '👨🏼‍🍳: Your a Doughnut!',
+    '👨🏼‍🍳: Idiot Sandwich',
+    '👨🏼‍🍳: ITS RAW',
+    '👨🏼‍🍳: Scalaps are undercooked',
+    '👨🏼‍🍳: ITS STILL MOOING',
+    '👨🏼‍🍳: Where`s the lamb sauce?',
+    '👨🏼‍🍳: Seasoned beautifully',
   ],
   '🎠': [
-    { chance: 0.75, text: '🎠: Carousel' },
+    '🎠: Lets Ride the Carousel!',
   ],
   '⭐': [
-    { chance: 0.75, text: '⭐: NO, I am your MOTHER!' },
+    '⭐: NO, I am your MOTHER!',
+    '⭐: Use the force!',
+    '⭐: Its a trap!',
+    '⭐: Lack of combos is Disturbing',
   ],
   '😈': [
-    { chance: 0.75, text: '😈: Go GeT YoUr LaUnDrY!!!' },
+    '😈: Go GeT YoUr LaUnDrY!!!',
+    '😈: Do ThE DiShEs!!!',
+    '😈: GoInG tO tHe CaR!!!',
   ],
 }

@@ -12,6 +12,10 @@ import {MatIconModule} from '@angular/material/icon';
 import {DialogService} from '../../services/dialog.service';
 import {EventService} from '../../services/event.service';
 import {GameEventType} from '../../models/event.model';
+import {PlayerService} from '../../services/player.service';
+import {MatDialog, MatDialogModule} from '@angular/material/dialog';
+import {LeaderboardComponent} from '../leaderboard/leaderboard.component';
+import {SettingsComponent} from '../settings/settings.component';
 
 @Component({
   selector: 'app-game-page',
@@ -20,6 +24,7 @@ import {GameEventType} from '../../models/event.model';
     BoardComponent,
     MatButtonModule,
     MatIconModule,
+    MatDialogModule,
   ],
   templateUrl: './game-page.component.html',
   styleUrl: './game-page.component.scss'
@@ -28,21 +33,22 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
   @ViewChild('boardArea', { static: true }) boardArea!: ElementRef<HTMLDivElement>;
 
+  private currentGameSessionId: string = '';
+  tileSizePx: number = 32;
+  private readonly GAP_PX = 4;
+
   board: BoardState | null = null;
   selectedCell: Cell | null = null;
   canInteract: boolean = false;
   isPaused: boolean = false;
   score: number = 0;
-  movesLeft: number = 20;
-
-
-  tileSizePx: number = 32;
-  private readonly GAP_PX = 4;
 
   dialogMessage: string | null = null;
   notification: string | null = null;
 
+  isHearing = true;
   isBurning = false;
+  bombActive = false;
 
   get isTalking() {
     return !!this.dialogMessage;
@@ -52,10 +58,12 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
 
   constructor(
-    private gameService: GameService,
+    private playerService: PlayerService,
+    protected gameService: GameService,
     private boardService: BoardService,
     private dialogService: DialogService,
     private eventService: EventService,
+    private dialog: MatDialog,
   ) { }
 
   ngOnInit() {
@@ -96,28 +104,57 @@ export class GamePageComponent implements OnInit, OnDestroy {
           case GameEventType.BURN:
             this.isBurning = true;
             break;
-
           case GameEventType.BURN_CLEAR:
             this.isBurning = false;
+            break;
+
+          case GameEventType.HEARING:
+            this.isHearing = false;
+            break;
+          case GameEventType.HEARING_CLEAR:
+            this.isHearing = true;
             break;
         }
       });
 
-    this.gameService.startGame(LEVEL_1.board);
-    this.calculateTileSize(); // init calc
-  }
+    if (!this.playerService.getPlayerName()) {
+      this.promptSettingsAndStartGame();
+    } else {
+      this.startGame();
+    }
 
-  @HostListener('window:resize')
-  onResize() {
-    this.calculateTileSize();
+    window.addEventListener('beforeunload', this.saveHighScoreOnExit);
   }
-
 
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
+  startGame() {
+    this.currentGameSessionId = Date.now().toString();
+    this.gameService.startGame(LEVEL_1.board);
+    this.calculateTileSize(); // init calc
+  }
+
+  promptSettingsAndStartGame() {
+    this.openSettings().afterClosed().subscribe(saved => {
+      if (this.playerService.getPlayerName()) {
+        this.startGame();
+      } else {
+        this.promptSettingsAndStartGame();
+      }
+    });
+  }
+
+  saveHighScoreOnExit = () => {
+    this.playerService.addScore(this.score, this.currentGameSessionId);
+  }
+
+  @HostListener('window:resize')
+  onResize() {
+    this.calculateTileSize();
+  }
 
   calculateTileSize() {
     if (!this.boardArea || !this.board) return;
@@ -159,18 +196,23 @@ export class GamePageComponent implements OnInit, OnDestroy {
     }
 
     // Attempt swap
-    await this.onPlayerSwap(this.selectedCell, cell);
+    await this.gameService.playerSwap(this.selectedCell, cell);
 
     // clear selection after swap attempt
     this.selectedCell = null;
   }
 
-  async onPlayerSwap(cellA: Cell, cellB: Cell) {
-    const success = await this.gameService.playerSwap(cellA, cellB);
-    if (!success) {
-      this.dialogService.showDialog("Bite Me!")
-      this.dialogService.showNotifications("No matches.");
-    }
+  async onShuffleClick() {
+    if (!this.canInteract) return;
+    await this.gameService.shuffleBoard();
+  }
+
+  async onBombClick() {
+    if (!this.canInteract) return;
+
+    this.bombActive = true;
+    await this.gameService.useBomb();
+    this.bombActive = false;
   }
 
   resumeGame() {
@@ -178,14 +220,24 @@ export class GamePageComponent implements OnInit, OnDestroy {
     console.log('Game resumed');
   }
 
-  restartLevel() {
+  openLeaderboard() {
     this.isPaused = false;
-    //this.gameService.startGame(LEVEL_1.board);
-    console.log('Level restarted');
+
+    this.playerService.addScore(this.score, this.currentGameSessionId);
+
+    this.dialog.open(LeaderboardComponent, {
+      width: '90%',
+      maxWidth: '600px',
+      disableClose: false,
+    })
   }
 
   openSettings() {
-    console.log('Settings opened (stub)');
-    // Add settings UI logic here
+    this.isPaused = false;
+    return this.dialog.open(SettingsComponent, {
+      width: '90%',
+      maxWidth: '400px',
+      disableClose: true,
+    });
   }
 }

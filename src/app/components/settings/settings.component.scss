@@ -1,0 +1,24 @@
+h2 {
+  margin-bottom: 16px;
+  font-weight: 600;
+  font-size: 1.5rem;
+  color: #3f51b5; /* Material Indigo */
+  text-align: center;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+}
+
+button[type="submit"] {
+  min-width: 100px;
+}

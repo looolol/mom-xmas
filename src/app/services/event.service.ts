@@ -1,7 +1,13 @@
 import {Injectable} from '@angular/core';
 import {Observable, Subject, timer} from 'rxjs';
-import {GameEvent, GameEventType} from '../models/event.model';
+import {
+  clearTypeKey,
+  GAME_EVENTS,
+  GameEvent,
+  GameEventType
+} from '../models/event.model';
 import {DialogService} from './dialog.service';
+import {UI_DISPLAY_DURATIONS} from '../models/ui-messages.model';
 
 @Injectable({
   providedIn: 'root'
@@ -27,41 +33,51 @@ export class EventService {
    ) { }
 
 
-  emit(event: GameEvent): boolean {
-    if (this.activeEvent) {
-      console.log( 'Ignoring event', event.type, 'because', this.activeEvent, 'isActive');
+  emit(gameEvent: GameEvent): boolean {
+    if (gameEvent.type.endsWith('_clear')) {
+      console.log(`Ignoring attempt to emit clear event type: ${gameEvent.type}`);
       return false;
     }
 
-    console.log('Emitting event', event.type, event);
-    this.activeEvent = event.type;
-    this.eventSubject.next(event);
+    if (this.activeEvent) {
+      console.log( 'Ignoring event', gameEvent, 'because', this.activeEvent, 'isActive');
+      return false;
+    }
+
+    console.log('Emitting event', gameEvent.type, gameEvent);
+    this.activeEvent = gameEvent.type;
+    this.eventSubject.next(gameEvent);
+
+    if (gameEvent.notif) {
+      this.dialogService.showNotifications(gameEvent.notif, UI_DISPLAY_DURATIONS.long);
+    }
 
     // If event has duration, emit a 'clear' event after duration
-    if (event.durationMs) {
-      timer(event.durationMs).subscribe(() => {
-        console.log('Emitting event cleared', event.type, event);
-
-        switch (event.type) {
-          case GameEventType.HEARING:
-            this.eventSubject.next({ type: GameEventType.HEARING_CLEAR });
-            this.dialogService.showNotifications('Hearing restored.', 3000);
-            break;
-          case GameEventType.BURN:
-            this.eventSubject.next({ type: GameEventType.BURN_CLEAR});
-            this.dialogService.showNotifications('🧯💨 🧯💨 🧯💨', 3000);
-            break;
-          case GameEventType.HEARING_CLEAR,
-            GameEventType.BURN_CLEAR:
-            break;
-          default:
-            this.dialogService.showNotifications(`Event ${event.type} cleared.`, event.durationMs ?? 3000);
-        }
-
-        this.activeEvent = null;
+    if (gameEvent.durationMs) {
+      timer(gameEvent.durationMs).subscribe(() => {
+        console.log('Emitting event cleared', gameEvent.type, gameEvent);
+        this.clearEvent(gameEvent.type);
       });
     }
 
     return true;
+  }
+
+  private clearEvent(type: GameEventType) {
+    const clearType = clearTypeKey(type);
+    if (!(clearType in GAME_EVENTS)) {
+      this.dialogService.showNotifications(`Event ${type} cleared.`, UI_DISPLAY_DURATIONS.medium);
+      this.activeEvent = null;
+      return;
+    }
+
+    const clearEvent = GAME_EVENTS[clearType];
+
+    this.eventSubject.next(clearEvent);
+    if (clearEvent.notif) {
+      this.dialogService.showNotifications(clearEvent.notif, UI_DISPLAY_DURATIONS.long);
+    }
+
+    this.activeEvent = null;
   }
 }
