@@ -12,6 +12,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {DialogService} from '../../services/dialog.service';
 import {EventService} from '../../services/event.service';
 import {GameEventType} from '../../models/event.model';
+import {PlayerService} from '../../services/player.service';
 
 @Component({
   selector: 'app-game-page',
@@ -27,6 +28,8 @@ import {GameEventType} from '../../models/event.model';
 export class GamePageComponent implements OnInit, OnDestroy {
 
   @ViewChild('boardArea', { static: true }) boardArea!: ElementRef<HTMLDivElement>;
+
+  playerName: string = '';
 
   board: BoardState | null = null;
   selectedCell: Cell | null = null;
@@ -53,6 +56,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
 
   constructor(
+    private playerService: PlayerService,
     protected gameService: GameService,
     private boardService: BoardService,
     private dialogService: DialogService,
@@ -109,6 +113,8 @@ export class GamePageComponent implements OnInit, OnDestroy {
             break;
         }
       });
+
+    this.playerName = this.playerService.getPlayerName();
 
     this.gameService.startGame(LEVEL_1.board);
     this.calculateTileSize(); // init calc
@@ -189,14 +195,17 @@ export class GamePageComponent implements OnInit, OnDestroy {
     console.log('Game resumed');
   }
 
-  restartLevel() {
-    this.isPaused = false;
-    //this.gameService.startGame(LEVEL_1.board);
-    console.log('Level restarted');
+  openLeaderboard() {
+    const leaderboard = this.playerService.getLeaderboard();
+    console.log('Open Leaderboard', leaderboard);
   }
 
   openSettings() {
-    console.log('Settings opened (stub)');
-    // Add settings UI logic here
+    // open modal
+    const newName = prompt('Enter your player name:', this.playerName);
+    if (newName && newName.trim()) {
+      this.playerName = newName.trim();
+      this.playerService.setPlayerName(this.playerName);
+    }
   }
 }

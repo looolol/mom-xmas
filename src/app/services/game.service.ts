@@ -15,6 +15,7 @@ import {EventService} from "./event.service";
 import {GAME_EVENTS, GameEventType} from "../models/event.model";
 import {Dir} from "../models/direction.model";
 import {UI_STRINGS, UI_DISPLAY_DURATIONS} from '../models/ui-messages.model';
+import {PlayerService} from './player.service';
 
 @Injectable({
   providedIn: 'root'
@@ -47,9 +48,10 @@ export class GameService {
 
 
   constructor(
-      private boardService: BoardService,
-      private eventService: EventService,
-      private dialogService: DialogService,
+    private playerService: PlayerService,
+    private boardService: BoardService,
+    private eventService: EventService,
+    private dialogService: DialogService,
   ) { }
 
 
