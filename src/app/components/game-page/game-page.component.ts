@@ -15,6 +15,7 @@ import {GameEventType} from '../../models/event.model';
 import {PlayerService} from '../../services/player.service';
 import {MatDialog, MatDialogModule} from '@angular/material/dialog';
 import {LeaderboardComponent} from '../leaderboard/leaderboard.component';
+import {SettingsComponent} from '../settings/settings.component';
 
 @Component({
   selector: 'app-game-page',
@@ -32,16 +33,15 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
   @ViewChild('boardArea', { static: true }) boardArea!: ElementRef<HTMLDivElement>;
 
-  playerName: string = '';
+  private currentGameSessionId: string = '';
+  tileSizePx: number = 32;
+  private readonly GAP_PX = 4;
 
   board: BoardState | null = null;
   selectedCell: Cell | null = null;
   canInteract: boolean = false;
   isPaused: boolean = false;
   score: number = 0;
-
-  tileSizePx: number = 32;
-  private readonly GAP_PX = 4;
 
   dialogMessage: string | null = null;
   notification: string | null = null;
@@ -117,10 +117,11 @@ export class GamePageComponent implements OnInit, OnDestroy {
         }
       });
 
-    this.playerName = this.playerService.getPlayerName();
-
-    this.gameService.startGame(LEVEL_1.board);
-    this.calculateTileSize(); // init calc
+    if (!this.playerService.getPlayerName()) {
+      this.promptSettingsAndStartGame();
+    } else {
+      this.startGame();
+    }
 
     window.addEventListener('beforeunload', this.saveHighScoreOnExit);
   }
@@ -130,8 +131,24 @@ export class GamePageComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  startGame() {
+    this.currentGameSessionId = Date.now().toString();
+    this.gameService.startGame(LEVEL_1.board);
+    this.calculateTileSize(); // init calc
+  }
+
+  promptSettingsAndStartGame() {
+    this.openSettings().afterClosed().subscribe(saved => {
+      if (this.playerService.getPlayerName()) {
+        this.startGame();
+      } else {
+        this.promptSettingsAndStartGame();
+      }
+    });
+  }
+
   saveHighScoreOnExit = () => {
-    this.playerService.addScore(this.score);
+    this.playerService.addScore(this.score, this.currentGameSessionId);
   }
 
   @HostListener('window:resize')
@@ -206,6 +223,8 @@ export class GamePageComponent implements OnInit, OnDestroy {
   openLeaderboard() {
     this.isPaused = false;
 
+    this.playerService.addScore(this.score, this.currentGameSessionId);
+
     this.dialog.open(LeaderboardComponent, {
       width: '90%',
       maxWidth: '600px',
@@ -214,11 +233,11 @@ export class GamePageComponent implements OnInit, OnDestroy {
   }
 
   openSettings() {
-    // open modal
-    const newName = prompt('Enter your player name:', this.playerName);
-    if (newName && newName.trim()) {
-      this.playerName = newName.trim();
-      this.playerService.setPlayerName(this.playerName);
-    }
+    this.isPaused = false;
+    return this.dialog.open(SettingsComponent, {
+      width: '90%',
+      maxWidth: '400px',
+      disableClose: true,
+    });
   }
 }

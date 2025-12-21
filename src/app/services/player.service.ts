@@ -1,18 +1,15 @@
 import { Injectable } from '@angular/core';
 import {LeaderboardEntry, LS_KEYS} from '../models/leaderboard.model';
+import {LEADERBOARD_ENTRIES} from '../utils/constants';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PlayerService {
 
-  getPlayerName(): string {
+  getPlayerName(): string | null {
     let name = localStorage.getItem(LS_KEYS.PLAYER_NAME);
-    if (!name) {
-      name = 'Player';
-      localStorage.setItem(LS_KEYS.PLAYER_NAME, name);
-    }
-    return name;
+    return name && name.trim() ? name : null;
   }
 
   setPlayerName(name: string) {
@@ -25,14 +22,30 @@ export class PlayerService {
     return list.sort((a, b) => b.score - a.score);
   }
 
-  addScore(score: number) {
+  addScore(score: number, sessionId: string) {
+    if (!score || score <= 0) {
+      return;
+    }
+
     const leaderboard = this.getLeaderboard();
 
-    leaderboard.push({ name: this.getPlayerName(), score, date: Date.now() });
+    const name = this.getPlayerName();
+    if (!name) return;
+
+    const existingEntry = leaderboard.find(e => e.sessionId === sessionId);
+
+    if (existingEntry) {
+      if (score > existingEntry.score) {
+        existingEntry.score = score;
+        existingEntry.date = Date.now();
+      }
+    } else {
+      leaderboard.push({ name, score, date: Date.now(), sessionId });
+    }
+
     leaderboard.sort((a, b) => b.score - a.score);
 
-    const top10 = leaderboard.slice(0, 10);
-
-    localStorage.setItem(LS_KEYS.LEADERBOARD, JSON.stringify(top10));
+    const top = leaderboard.slice(0, LEADERBOARD_ENTRIES);
+    localStorage.setItem(LS_KEYS.LEADERBOARD, JSON.stringify(top));
   }
 }

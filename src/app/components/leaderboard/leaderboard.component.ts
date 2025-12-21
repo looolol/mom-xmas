@@ -3,19 +3,22 @@ import {MatDialogRef, MatDialogModule} from '@angular/material/dialog';
 import {PlayerService} from '../../services/player.service';
 import {MatButtonModule} from '@angular/material/button';
 import {CommonModule} from '@angular/common';
+import {MatTableModule} from '@angular/material/table';
 
 @Component({
   selector: 'app-leaderboard',
   imports: [
     CommonModule,
     MatDialogModule,
-    MatButtonModule
+    MatButtonModule,
+    MatTableModule,
   ],
   templateUrl: './leaderboard.component.html',
   styleUrl: './leaderboard.component.scss'
 })
 export class LeaderboardComponent implements OnInit {
 
+  displayedColumns = ['name', 'score', 'date'];
   leaderboard: any[] = [];
 
   constructor(
@@ -30,4 +33,6 @@ export class LeaderboardComponent implements OnInit {
   close() {
     this.dialogRef.close();
   }
+
+  protected readonly dispatchEvent = dispatchEvent;
 }

@@ -1,0 +1,28 @@
+<h2>Settings</h2>
+<form (ngSubmit)="save()">
+  <mat-form-field appearance="fill" style="width: 100%;">
+    <mat-label>Player Name</mat-label>
+    <input matInput [(ngModel)]="playerName" name="playerName" required />
+    <button
+      *ngIf="playerName"
+      mat-icon-button
+      matSuffix
+      aria-label="Clear"
+      (click)="playerName = ''"
+      tabindex="-1"
+      type="button"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+
+
+    <mat-error *ngIf="!isNameValid && playerName !== ''">
+      Name cannot be empty.
+    </mat-error>
+  </mat-form-field>
+
+
+  <div class="dialog-buttons">
+    <button mat-raised-button color="primary" type="submit">Save</button>
+  </div>
+</form>
