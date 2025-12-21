@@ -226,19 +226,12 @@
 .game-footer {
   width: 100%;
   display: flex;
-  justify-content: space-around;
+  justify-content: center;
   align-items: center;
   gap: 16px;
 
-  .moves-left {
-    font-size: clamp(1rem, 3vw, 1.25rem);
-    font-weight: 600;
-  }
-
-  .power-ups {
-    button {
-      margin-left: 8px;
-    }
+  button {
+    margin-left: 8px;
   }
 }
 

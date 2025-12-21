@@ -8,7 +8,9 @@ import {gameModel, GamePhase} from '../models/game.model';
 import {DialogService} from './dialog.service';
 import {dialogLinesBySymbol} from "../models/dialog.model";
 import {EventService} from "./event.service";
-import {GameEventType} from "../models/event.model";
+import {GameEventDialog, GameEventType} from "../models/event.model";
+import {Dir} from "../models/direction.model";
+import {animation} from "@angular/animations";
 
 @Injectable({
   providedIn: 'root'
@@ -138,13 +140,22 @@ export class GameService {
       const newSymbols = this.boardService.detectNewSymbols(clearedBoard, droppedBoard);
       await this.boardService.animateCreate(newSymbols);
 
-      if (this.containsSymbol(matches, '🍪')) {
-        if (this.eventService.emit({ type: GameEventType.BURN, durationMs: 10000})) {
-          this.dialogService.showNotifications('MOM THE COOKIES!!!', 5000);
+      this.triggerDialogForMatches(matches);
+
+      const eventChance = Math.random();
+      if (eventChance < 0.25) {
+        if (this.containsSymbol(matches, '🍪')) {
+          if (this.eventService.emit({type: GameEventType.BURN, durationMs: 10000})) {
+            this.dialogService.showNotifications(GameEventDialog.BURN, 5000);
+          }
+        }
+        if (this.containsSymbol(matches, '🎠')) {
+          if (this.eventService.emit({type: GameEventType.CAROUSEL, durationMs: 6000})) {
+            this.dialogService.showNotifications(GameEventDialog.CAROUSEL, 5000);
+            await this.triggerCarousel();
+          }
         }
       }
-
-      this.triggerDialogForMatches(matches);
       this.checkComboEvents(comboCount, matches);
 
       matches = this.boardService.detectMatches(this.boardService.board);
@@ -184,7 +195,7 @@ export class GameService {
         // Hearing event
         if (eventChance < 0.10) {
           if (this.eventService.emit({ type: GameEventType.HEARING, durationMs: 10000})) {
-            this.dialogService.showNotifications('What??? Symbols are misheard for a while...', 5000);
+            this.dialogService.showNotifications(GameEventDialog.HEARING, 5000);
             return; // Priority
           }
         }
@@ -244,6 +255,24 @@ export class GameService {
     }
 
     return clusters;
+  }
+
+  private async triggerCarousel(): Promise<void> {
+    while (this.eventService.currentEvent === GameEventType.CAROUSEL) {
+      const board = this.boardService.board;
+      if (!board) return;
+
+      await this.boardService.animateCarousel(board,);
+
+      let newBoard = board;
+      for (let row = 0; row < board.rows; row++) {
+        const dir = row % 2 === 0 ? Dir.RIGHT : Dir.LEFT;
+        newBoard = this.boardService.rotateRow(newBoard, row, dir);
+      }
+      this.boardService.updateBoard(newBoard);
+
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
   }
 
   private containsSymbol(matches: Cell[], kind: string): boolean {

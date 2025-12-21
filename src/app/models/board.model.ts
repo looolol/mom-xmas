@@ -59,6 +59,15 @@ export class BoardState {
     return column;
   }
 
+  getRow(r: number): Cell[] {
+    const row: Cell[] = [];
+    for (let col = 0; col < this.cols; col++) {
+      const cell = this.getCell(r, col);
+      if (cell) row.push(cell);
+    }
+    return row;
+  }
+
   getRunLength(start: Position, delta: Position): number {
     const startCell = this.getCell(start);
     if (!startCell?.symbol) return 0;

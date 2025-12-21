@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {Observable, Subject, timer} from 'rxjs';
-import {GameEvent, GameEventType} from '../models/event.model';
+import {GameEvent, GameEventDialog, GameEventType} from '../models/event.model';
 import {DialogService} from './dialog.service';
 
 @Injectable({
@@ -41,27 +41,36 @@ export class EventService {
     if (event.durationMs) {
       timer(event.durationMs).subscribe(() => {
         console.log('Emitting event cleared', event.type, event);
-
-        switch (event.type) {
-          case GameEventType.HEARING:
-            this.eventSubject.next({ type: GameEventType.HEARING_CLEAR });
-            this.dialogService.showNotifications('Hearing restored.', 3000);
-            break;
-          case GameEventType.BURN:
-            this.eventSubject.next({ type: GameEventType.BURN_CLEAR});
-            this.dialogService.showNotifications('🧯💨 🧯💨 🧯💨', 3000);
-            break;
-          case GameEventType.HEARING_CLEAR,
-            GameEventType.BURN_CLEAR:
-            break;
-          default:
-            this.dialogService.showNotifications(`Event ${event.type} cleared.`, event.durationMs ?? 3000);
-        }
-
-        this.activeEvent = null;
+        this.clearEvent(event.type);
       });
     }
 
     return true;
+  }
+
+  private clearEvent(type: GameEventType) {
+    switch (type) {
+      case GameEventType.HEARING:
+        this.eventSubject.next({ type: GameEventType.HEARING_CLEAR });
+        this.dialogService.showNotifications(GameEventDialog.HEARING_CLEAR, 3000);
+        break;
+      case GameEventType.BURN:
+        this.eventSubject.next({ type: GameEventType.BURN_CLEAR});
+        this.dialogService.showNotifications(GameEventDialog.BURN_CLEAR, 3000);
+        break;
+      case GameEventType.CAROUSEL:
+        this.eventSubject.next({ type: GameEventType.CAROUSEL_CLEAR });
+        this.dialogService.showDialog(GameEventDialog.CAROUSEL_CLEAR_DIALOG, 3000);
+        this.dialogService.showNotifications(GameEventDialog.CAROUSEL_CLEAR, 3000);
+        break;
+      case GameEventType.HEARING_CLEAR:
+      case GameEventType.BURN_CLEAR:
+      case GameEventType.CAROUSEL_CLEAR:
+        break;
+      default:
+        this.dialogService.showNotifications(`Event ${type} cleared.`, 3000);
+    }
+
+    this.activeEvent = null;
   }
 }

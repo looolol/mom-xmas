@@ -94,6 +94,22 @@ export class BoardService {
     return new BoardState(board.rows, board.cols, clearedCells);
   }
 
+  rotateRow(board: BoardState, row: number, dir: Dir.LEFT | Dir.RIGHT): BoardState {
+    const rowCells = board.getRow(row);
+    const symbols = rowCells.map(c => c.symbol);
+
+    const rotated =
+        dir === Dir.LEFT
+          ? [...symbols.slice(1), symbols[0]]
+          : [symbols[symbols.length - 1], ...symbols.slice(0, -1)];
+
+    const updated = rowCells.map((cell, i) =>
+      cell.withSymbol(rotated[i])
+    );
+
+    return board.updateCells(updated);
+  }
+
   /**
    * --- Animation Methods ---
    */
@@ -185,6 +201,26 @@ export class BoardService {
     }));
 
     if (animations.length === 0) return;
+    await this.animationService.play(animations);
+  }
+
+  async animateCarousel(board: BoardState) {
+    const animations = [];
+
+    for (let row = 0; row < board.rows; row++) {
+      const dir = row % 2 === 0 ? Dir.RIGHT : Dir.LEFT;
+      const cells = board.getRow(row).filter(c => c.symbol);
+
+      animations.push(...cells.map(cell => ({
+        symbolId: cell.symbol!.id,
+        renderMode: AnimationMode.Move,
+        params: {
+          x: dir === Dir.LEFT ? '-1px' : '1px',
+          y: '0px',
+        }
+      })));
+    }
+
     await this.animationService.play(animations);
   }
 

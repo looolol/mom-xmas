@@ -14,7 +14,7 @@ export const dialogLinesBySymbol: Record<string, DialogLine[]> = {
     { chance: 0.75, text: '👨🏼‍🍳: Your a Doughnut!' },
   ],
   '🎠': [
-    { chance: 0.75, text: '🎠: Carousel' },
+    { chance: 0.75, text: '🎠: Lets Ride the Carousel!' },
   ],
   '⭐': [
     { chance: 0.75, text: '⭐: NO, I am your MOTHER!' },
