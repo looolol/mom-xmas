@@ -7,6 +7,8 @@ export enum AnimationMode {
   Move = 'move',
   Clearing = 'clearing',
   Creating = 'creating',
+  FadeOut = 'fade-out',
+  FadeIn = 'fade-in',
 }
 
 export interface AnimationParams {

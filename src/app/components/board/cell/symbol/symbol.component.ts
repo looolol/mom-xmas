@@ -1,6 +1,6 @@
 import {Component, Input, OnChanges, OnDestroy, OnInit} from '@angular/core';
 import {SymbolModel} from '../../../../models/symbol.model';
-import {clearingAnimation, motionAnimation,} from '../../../../animations/symbol.animations';
+import {clearingAnimation, fadeAnimation, motionAnimation,} from '../../../../animations/symbol.animations';
 import {CommonModule} from '@angular/common';
 import {AnimationMode, AnimationParams, SymbolAnimation} from '../../../../models/animation.model';
 import {AnimationService} from '../../../../services/animation.service';
@@ -18,7 +18,7 @@ import {BURNT_SYMBOLS} from "../../../../utils/constants";
   ],
   templateUrl: './symbol.component.html',
   styleUrl: './symbol.component.scss',
-  animations: [motionAnimation, clearingAnimation],
+  animations: [motionAnimation, clearingAnimation, fadeAnimation],
 })
 export class SymbolComponent implements OnInit, OnChanges, OnDestroy {
   @Input() symbol!: SymbolModel;
@@ -85,6 +85,8 @@ export class SymbolComponent implements OnInit, OnChanges, OnDestroy {
 
     if (this.currentAnimation.renderMode === AnimationMode.Move) return AnimationMode.Move;
     if (this.currentAnimation.renderMode === AnimationMode.Creating) return AnimationMode.Creating;
+    if (this.currentAnimation.renderMode === AnimationMode.FadeIn) return AnimationMode.FadeIn;
+    if (this.currentAnimation.renderMode === AnimationMode.FadeOut) return AnimationMode.FadeOut;
 
     return AnimationMode.None;
   }

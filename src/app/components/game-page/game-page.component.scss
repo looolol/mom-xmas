@@ -233,6 +233,12 @@
   button {
     margin-left: 8px;
   }
+
+  button.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+    cursor: default;
+  }
 }
 
 

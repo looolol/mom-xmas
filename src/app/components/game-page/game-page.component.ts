@@ -173,6 +173,18 @@ export class GamePageComponent implements OnInit, OnDestroy {
     }
   }
 
+  async onShuffleClick() {
+    if (!this.canInteract) return;
+
+    await this.gameService.shuffleBoard();
+  }
+
+  async onBombClick() {
+    if (!this.canInteract) return;
+
+    console.log('BOMB CLICK');
+  }
+
   resumeGame() {
     this.isPaused = false;
     console.log('Game resumed');

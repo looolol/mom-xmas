@@ -10,7 +10,6 @@ import {dialogLinesBySymbol} from "../models/dialog.model";
 import {EventService} from "./event.service";
 import {GameEventDialog, GameEventType} from "../models/event.model";
 import {Dir} from "../models/direction.model";
-import {animation} from "@angular/animations";
 
 @Injectable({
   providedIn: 'root'
@@ -279,4 +278,22 @@ export class GameService {
     return matches.some(cell => cell.getSymbolKind() === kind);
   }
 
+
+  async shuffleBoard(): Promise<void> {
+    const board = this.boardService.board;
+    if (!board) return;
+
+    this.setPhase(GamePhase.Shuffling);
+
+    await this.boardService.animateFadeOut(board);
+
+    const shuffledBoard = this.boardService.shuffleBoard(board);
+    this.boardService.updateBoard(shuffledBoard);
+
+    await this.boardService.animateFadeIn(shuffledBoard);
+
+    this.setPhase(GamePhase.Idle);
+    await this.resolveMatches();
+    this.setPhase(GamePhase.Idle);
+  }
 }

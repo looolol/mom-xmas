@@ -48,11 +48,17 @@
 
     <!-- Footer: power-ups, moves left, buttons -->
     <footer class="game-footer">
-        <button mat-mini-fab color="primary" aria-label="Shuffle">
+        <button mat-mini-fab color="primary" aria-label="Shuffle"
+                (click)="onShuffleClick()"
+                [class.disabled]="!canInteract"
+        >
           <mat-icon>shuffle</mat-icon>
         </button>
 
-        <button mat-mini-fab color="warn" aria-label="Bomb">
+        <button mat-mini-fab color="warn" aria-label="Bomb"
+                (click)="onBombClick()"
+                [class.disabled]="!canInteract"
+        >
           <mat-icon>whatshot</mat-icon>
         </button>
     </footer>

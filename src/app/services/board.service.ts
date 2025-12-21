@@ -110,6 +110,29 @@ export class BoardService {
     return board.updateCells(updated);
   }
 
+  shuffleBoard(board: BoardState) {
+    if (!board) return board;
+
+    const symbols = board.cells
+      .filter(cell => cell.symbol)
+      .map(cell => cell.symbol!);
+
+    for (let i = symbols.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [symbols[i], symbols[j]] = [symbols[j], symbols[i]];
+    }
+
+    const newCells = board.cells.map(cell => {
+      if (cell.symbol) {
+        const newSymbol = symbols.pop()!;
+        return cell.withSymbol(newSymbol);
+      }
+      return cell;
+    });
+
+    return new BoardState(board.rows, board.cols, newCells);
+  }
+
   /**
    * --- Animation Methods ---
    */
@@ -222,6 +245,32 @@ export class BoardService {
     }
 
     await this.animationService.play(animations);
+  }
+
+  async animateFadeOut(board: BoardState) {
+    const cellsWithSymbols = board.cells.filter(c => c.symbol);
+
+    if (cellsWithSymbols.length === 0) return;
+
+    await this.animationService.play(
+      cellsWithSymbols.map(cell => ({
+        symbolId: cell.symbol!.id,
+        renderMode:AnimationMode.FadeOut,
+      }))
+    );
+  }
+
+  async animateFadeIn(board: BoardState) {
+    const cellsWithSymbols = board.cells.filter(c => c.symbol);
+
+    if (cellsWithSymbols.length === 0) return;
+
+    await this.animationService.play(
+      cellsWithSymbols.map(cell => ({
+        symbolId: cell.symbol!.id,
+        renderMode:AnimationMode.FadeIn,
+      }))
+    );
   }
 
   // -- OTHER METHODS ----
