@@ -210,6 +210,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
   async onShuffleClick() {
     if (!this.canInteract) return;
     await this.gameService.shuffleBoard();
+    this.playerService.addScore(this.score, this.currentGameSessionId);
   }
 
   async onBombClick() {
@@ -217,6 +218,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
     this.bombActive = true;
     await this.gameService.useBomb();
+    this.playerService.addScore(this.score, this.currentGameSessionId);
     this.bombActive = false;
   }
 
