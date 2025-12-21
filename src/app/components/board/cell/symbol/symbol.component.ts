@@ -111,6 +111,7 @@ export class SymbolComponent implements OnInit, OnChanges, OnDestroy {
 
     if (this.hearingLoss) {
       this.displayedSymbol = randomSymbol();
+      return;
     }
 
     this.displayedSymbol = this.symbol.kind;
