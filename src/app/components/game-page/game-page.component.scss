@@ -45,6 +45,69 @@
   box-sizing: border-box;
 }
 
+.board-area.burning {
+  box-shadow:
+    0 0 24px rgba(255, 120, 0, 0.6),
+    inset 0 0 32px rgba(255, 80, 0, 0.35);
+  animation: burnShake 0.25s infinite;
+}
+
+.board-area.burning::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      circle at bottom,
+      rgba(255, 140, 0, 0.45),
+      rgba(255, 60, 0, 0.25),
+      transparent 70%
+    );
+
+  animation: firePulse 1.2s ease-in-out infinite;
+}
+
+.board-area.burning::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  pointer-events: none;
+
+  background:
+    repeating-linear-gradient(
+        -45deg,
+        rgba(255, 255, 255, 0.03),
+        rgba(255, 255, 255, 0.03) 2px,
+        transparent 2px,
+        transparent 6px
+    );
+
+  animation: heatWaves 0.8s linear infinite;
+  mix-blend-mode: overlay;
+}
+
+@keyframes firePulse {
+  0%   { opacity: 0.6; }
+  50%  { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+@keyframes heatWaves {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(-12px); }
+}
+
+@keyframes burnShake {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(1px, -1px); }
+  50%  { transform: translate(-1px, 1px); }
+  75%  { transform: translate(1px, 1px); }
+  100% { transform: translate(0, 0); }
+}
 
 .bottom-bar {
   display: flex;

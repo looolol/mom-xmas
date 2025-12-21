@@ -1,13 +1,14 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, map } from 'rxjs';
-import { BoardConfig } from '../models/board.model';
-import { BoardService } from './board.service';
-import { Cell } from '../models/cell.model';
-import { POINTS_PER_CELL } from '../utils/constants';
-import { GamePhase, gameModel } from '../models/game.model';
-import { DialogService } from './dialog.service';
+import {Injectable} from '@angular/core';
+import {BehaviorSubject, map} from 'rxjs';
+import {BoardConfig} from '../models/board.model';
+import {BoardService} from './board.service';
+import {Cell} from '../models/cell.model';
+import {POINTS_PER_CELL} from '../utils/constants';
+import {gameModel, GamePhase} from '../models/game.model';
+import {DialogService} from './dialog.service';
 import {dialogLinesBySymbol} from "../models/dialog.model";
 import {EventService} from "./event.service";
+import {GameEventType} from "../models/event.model";
 
 @Injectable({
   providedIn: 'root'
@@ -137,6 +138,12 @@ export class GameService {
       const newSymbols = this.boardService.detectNewSymbols(clearedBoard, droppedBoard);
       await this.boardService.animateCreate(newSymbols);
 
+      if (this.containsSymbol(matches, '🍪')) {
+        if (this.eventService.emit({ type: GameEventType.BURN, durationMs: 10000})) {
+          this.dialogService.showNotifications('MOM THE COOKIES!!!', 5000);
+        }
+      }
+
       this.triggerDialogForMatches(matches);
       this.checkComboEvents(comboCount, matches);
 
@@ -172,11 +179,15 @@ export class GameService {
     // Bad Combo
     if (comboCount === 1) {
       const eventChance = Math.random();
-      // Hearing event
       if (eventChance < 0.10) {
-        this.eventService.emit({ type: 'HEARING_LOSS', durationMs: 10000});
-        this.dialogService.showNotifications('What??? Symbols are misheard for a while...', 5000);
-        return; // Priority
+
+        // Hearing event
+        if (eventChance < 0.10) {
+          if (this.eventService.emit({ type: GameEventType.HEARING, durationMs: 10000})) {
+            this.dialogService.showNotifications('What??? Symbols are misheard for a while...', 5000);
+            return; // Priority
+          }
+        }
       }
     }
 
@@ -233,6 +244,10 @@ export class GameService {
     }
 
     return clusters;
+  }
+
+  private containsSymbol(matches: Cell[], kind: string): boolean {
+    return matches.some(cell => cell.getSymbolKind() === kind);
   }
 
 }

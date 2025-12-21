@@ -8,7 +8,10 @@
     </button>
   </header>
 
-  <section #boardArea class="board-area">
+  <section #boardArea
+           class="board-area"
+           [class.burning]="isBurning"
+  >
     <app-board
       [board]="board"
       [tileSizePx]="tileSizePx"
