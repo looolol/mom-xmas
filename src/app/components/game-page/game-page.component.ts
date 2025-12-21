@@ -13,6 +13,8 @@ import {DialogService} from '../../services/dialog.service';
 import {EventService} from '../../services/event.service';
 import {GameEventType} from '../../models/event.model';
 import {PlayerService} from '../../services/player.service';
+import {MatDialog, MatDialogModule} from '@angular/material/dialog';
+import {LeaderboardComponent} from '../leaderboard/leaderboard.component';
 
 @Component({
   selector: 'app-game-page',
@@ -21,6 +23,7 @@ import {PlayerService} from '../../services/player.service';
     BoardComponent,
     MatButtonModule,
     MatIconModule,
+    MatDialogModule,
   ],
   templateUrl: './game-page.component.html',
   styleUrl: './game-page.component.scss'
@@ -36,7 +39,6 @@ export class GamePageComponent implements OnInit, OnDestroy {
   canInteract: boolean = false;
   isPaused: boolean = false;
   score: number = 0;
-
 
   tileSizePx: number = 32;
   private readonly GAP_PX = 4;
@@ -61,6 +63,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
     private boardService: BoardService,
     private dialogService: DialogService,
     private eventService: EventService,
+    private dialog: MatDialog,
   ) { }
 
   ngOnInit() {
@@ -118,6 +121,17 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
     this.gameService.startGame(LEVEL_1.board);
     this.calculateTileSize(); // init calc
+
+    window.addEventListener('beforeunload', this.saveHighScoreOnExit);
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  saveHighScoreOnExit = () => {
+    this.playerService.addScore(this.score);
   }
 
   @HostListener('window:resize')
@@ -140,12 +154,6 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
     this.tileSizePx = Math.floor(Math.min(tileSizeWidth, tileSizeHeight));
   }
-
-  ngOnDestroy() {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
 
   async onCellClick(cell: Cell) {
     if (!this.canInteract) return;
@@ -196,8 +204,13 @@ export class GamePageComponent implements OnInit, OnDestroy {
   }
 
   openLeaderboard() {
-    const leaderboard = this.playerService.getLeaderboard();
-    console.log('Open Leaderboard', leaderboard);
+    this.isPaused = false;
+
+    this.dialog.open(LeaderboardComponent, {
+      width: '90%',
+      maxWidth: '600px',
+      disableClose: false,
+    })
   }
 
   openSettings() {

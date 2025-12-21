@@ -21,12 +21,18 @@ export class PlayerService {
 
   getLeaderboard(): LeaderboardEntry[] {
     const json = localStorage.getItem(LS_KEYS.LEADERBOARD);
-    return json ? JSON.parse(json) : [];
+    const list: LeaderboardEntry[] = json ? JSON.parse(json) : [];
+    return list.sort((a, b) => b.score - a.score);
   }
 
   addScore(score: number) {
     const leaderboard = this.getLeaderboard();
+
     leaderboard.push({ name: this.getPlayerName(), score, date: Date.now() });
-    localStorage.setItem(LS_KEYS.LEADERBOARD, JSON.stringify(leaderboard.slice(0, 10)));
+    leaderboard.sort((a, b) => b.score - a.score);
+
+    const top10 = leaderboard.slice(0, 10);
+
+    localStorage.setItem(LS_KEYS.LEADERBOARD, JSON.stringify(top10));
   }
 }
