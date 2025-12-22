@@ -38,8 +38,6 @@ export class GlobalLeaderboardService {
 
     const snap = await getDocs(q);
 
-    console.log('fetched leaderboard', snap.docs.map(d => d.data()));
-
     return snap.docs.map(d => {
       const data = d.data() as any;
       const [uid, sessionId] = d.id.split('-', 2);

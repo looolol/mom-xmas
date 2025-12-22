@@ -1,1 +1,10 @@
-<app-game-page></app-game-page>
+<app-start-page
+  *ngIf="!gameStarted"
+  (startGame)="onStartGame()"
+  (openLeaderboard)="onOpenLeaderboard()"
+  (openSettings)="onOpenSettings();"
+></app-start-page>
+<app-game-page
+  *ngIf="gameStarted"
+  (quit)="onQuitGame()"
+></app-game-page>

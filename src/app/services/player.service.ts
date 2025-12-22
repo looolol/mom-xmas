@@ -55,9 +55,6 @@ export class PlayerService {
     const localList = this.getLeaderboard();
     const globalList = await this.globalLeaderboard.getTopScores();
 
-    console.log('localList', localList);
-    console.log('globalList', globalList);
-
     const map = new Map<string, LeaderboardEntry>();
 
     [...localList, ...globalList].forEach(entry => {
@@ -118,5 +115,17 @@ export class PlayerService {
     this.globalLeaderboard.submitScore(newEntry).catch(() => {
       // offline /quota/ iOS safari - ignore safely
     });
+  }
+
+  async syncLocalToGlobal(): Promise<void> {
+    const local = this.getLeaderboard();
+
+    const tasks = local.map(entry =>
+      this.globalLeaderboard.submitScore(entry).catch(() => {
+        // offline / quota / safari - ignore safely
+      })
+    );
+
+    await Promise.all(tasks);
   }
 }

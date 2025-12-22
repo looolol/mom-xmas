@@ -38,6 +38,4 @@ export class LeaderboardComponent implements OnInit {
   close() {
     this.dialogRef.close();
   }
-
-  protected readonly dispatchEvent = dispatchEvent;
 }
