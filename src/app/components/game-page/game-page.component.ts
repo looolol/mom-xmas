@@ -124,6 +124,9 @@ export class GamePageComponent implements OnInit, OnDestroy {
         }
       });
 
+    await this.authService.init();
+    await this.playerService.syncLocalToGlobal();
+
     if (!this.playerService.getPlayerName()) {
       this.promptSettingsAndStartGame();
     } else {

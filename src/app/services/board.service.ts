@@ -3,7 +3,7 @@ import {BehaviorSubject} from 'rxjs';
 import {allPositions, BoardConfig, BoardState, getCellType} from '../models/board.model';
 import {Cell, CellType} from '../models/cell.model';
 import {randomSymbol, randomSymbolExcluding} from '../utils/random-symbol';
-import {MATCH_CHECK_DEPTH, SYMBOLS} from '../utils/constants';
+import {MATCH_CHECK_DEPTH} from '../utils/constants';
 import {AnimationService} from './animation.service';
 import {Position} from '../models/position.model';
 import {
