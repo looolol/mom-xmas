@@ -3,6 +3,9 @@ export const UI_STRINGS = {
   burn: '🍪🔥: MOM THE COOKIES!!!',
   carousel: '🎠🎶: RIDE STARTED!',
 
+  two_phones_dialog: '📞📞🎶: Mom has 2 phones',
+  two_phones_notif: 'Big Match! 2x Points!',
+
   shuffle_dialog: '📞: Can I get a Board Refund?',
   shuffle_notif: '🔀 Shuffling...',
 
@@ -25,7 +28,7 @@ export const UI_STRINGS = {
   combo_4x: 'Combo x4! Crushing it!',
   combo_5x: 'Combo x5! Legendary! Awarded 🔀',
 
-  big_match: 'Big Match! Wow!',
+  big_match: 'Big Match!! Wow!!!',
 
   hearing_clear: '👂🏻: Hearing restored.',
   burn_clear: '🧯💨 🧯💨 🧯💨',

@@ -7,6 +7,8 @@ export enum GameEventType {
   BURN_CLEAR = 'burn_clear',
   CAROUSEL = 'carousel',
   CAROUSEL_CLEAR = 'carousel_clear',
+  TWO_PHONES = 'two_phones',
+  TWO_PHONES_CLEAR = 'two_phones_clear',
 
   BOMB = 'bomb',
   BOMB_CLEAR = 'bomb_clear',
@@ -52,6 +54,12 @@ export const GAME_EVENTS: Record<GameEventType, GameEvent> = {
     durationMs: EVENT_DURATIONS.medium,
     notif: UI_STRINGS.carousel,
   },
+  [GameEventType.TWO_PHONES]: {
+    chance: 1,
+    type: GameEventType.TWO_PHONES,
+    durationMs: EVENT_DURATIONS.long,
+    notif: UI_STRINGS.two_phones_notif,
+  },
 
   [GameEventType.BOMB]: {
     chance: 1,
@@ -65,7 +73,6 @@ export const GAME_EVENTS: Record<GameEventType, GameEvent> = {
     durationMs: EVENT_DURATIONS.medium,
     notif: UI_STRINGS.shuffle_notif,
   },
-
 
   [GameEventType.HEARING_CLEAR]: {
     chance: 1,
@@ -85,6 +92,11 @@ export const GAME_EVENTS: Record<GameEventType, GameEvent> = {
     durationMs: EVENT_DURATIONS.none,
     notif: UI_STRINGS.carousel_clear,
   },
+  [GameEventType.TWO_PHONES_CLEAR]: {
+    chance: 1,
+    type: GameEventType.TWO_PHONES_CLEAR,
+    durationMs: EVENT_DURATIONS.none,
+  },
   [GameEventType.BOMB_CLEAR]: {
     chance: 1,
     type: GameEventType.BOMB_CLEAR,
@@ -94,7 +106,7 @@ export const GAME_EVENTS: Record<GameEventType, GameEvent> = {
     chance: 1,
     type: GameEventType.SHUFFLE_CLEAR,
     durationMs: EVENT_DURATIONS.none,
-  }
+  },
 };
 
 export const clearTypeKey = (type: GameEventType) => (type + '_clear') as GameEventType;

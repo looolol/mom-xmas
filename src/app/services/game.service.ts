@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {BehaviorSubject, map} from 'rxjs';
+import {BehaviorSubject, map, Subscription} from 'rxjs';
 import {BoardConfig} from '../models/board.model';
 import {BoardService} from './board.service';
 import {Cell} from '../models/cell.model';
@@ -46,13 +46,27 @@ export class GameService {
     this._bombCount$.next(value);
   }
 
+  private eventSub: Subscription;
+  private twoPhones = false;
+
 
   constructor(
     private playerService: PlayerService,
     private boardService: BoardService,
     private eventService: EventService,
     private dialogService: DialogService,
-  ) { }
+  ) {
+    this.eventSub = this.eventService.events$.subscribe(event => {
+      switch (event.type) {
+        case GameEventType.TWO_PHONES:
+          this.twoPhones = true;
+          break;
+        case GameEventType.TWO_PHONES_CLEAR:
+          this.twoPhones = false;
+          break;
+      }
+    });
+  }
 
 
   private setPhase(next: GamePhase) {
@@ -73,7 +87,8 @@ export class GameService {
   }
 
   addScore(matches: Cell[], combo: number) {
-    this.score = this.score + matches.length * POINTS_PER_CELL * combo;
+    const twoPhonesMult = this.twoPhones ? 2 : 1;
+    this.score = this.score + matches.length * POINTS_PER_CELL * combo * twoPhonesMult;
   }
 
   async startGame(config: BoardConfig) {
@@ -235,6 +250,9 @@ export class GameService {
 
     if (bigMatches.length > 0) {
       this.dialogService.showNotifications(UI_STRINGS.big_match, UI_DISPLAY_DURATIONS.medium);
+      if (this.tryTriggerEvent(GameEventType.TWO_PHONES)) {
+        this.dialogService.showDialog(UI_STRINGS.two_phones_dialog, UI_DISPLAY_DURATIONS.medium);
+      }
     }
   }
 

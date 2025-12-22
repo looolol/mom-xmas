@@ -32,6 +32,7 @@ export class SymbolComponent implements OnInit, OnChanges, OnDestroy {
 
   hearingLoss = false;
   burning = false;
+  two_phones = false;
 
   constructor(
       private animationService: AnimationService,
@@ -59,6 +60,12 @@ export class SymbolComponent implements OnInit, OnChanges, OnDestroy {
           break;
         case GameEventType.BURN_CLEAR:
           this.burning = false;
+          break;
+        case GameEventType.TWO_PHONES:
+          this.two_phones = true;
+          break;
+        case GameEventType.TWO_PHONES_CLEAR:
+          this.two_phones = false;
           break;
       }
 
@@ -113,6 +120,11 @@ export class SymbolComponent implements OnInit, OnChanges, OnDestroy {
 
     if (this.hearingLoss) {
       this.displayedSymbol = randomSymbol();
+      return;
+    }
+
+    if (this.two_phones) {
+      this.displayedSymbol = `${this.symbol.kind}${this.symbol.kind}`;
       return;
     }
 
