@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1766319492156,
+  "timestamp": 1766375965611,
   "index": "/mom-xmas/index.html",
   "assetGroups": [
     {
@@ -12,7 +12,7 @@
       },
       "urls": [
         "/mom-xmas/index.html",
-        "/mom-xmas/main.52b4a40127385f82.js",
+        "/mom-xmas/main.e31adaf1a7329b08.js",
         "/mom-xmas/manifest.webmanifest",
         "/mom-xmas/polyfills.a46bd56511033644.js",
         "/mom-xmas/runtime.9e5a0612ff97c217.js",
@@ -30,7 +30,8 @@
       "urls": [
         "/mom-xmas/assets/avatars/mom-droid.png",
         "/mom-xmas/assets/lightning.webp",
-        "/mom-xmas/assets/mom-xmas.png"
+        "/mom-xmas/assets/mom-xmas.png",
+        "/mom-xmas/assets/snowing.gif"
       ],
       "patterns": []
     }
@@ -40,8 +41,9 @@
     "/mom-xmas/assets/avatars/mom-droid.png": "ebbe460f7753f2ff3fb250d0e2d0840359f2f197",
     "/mom-xmas/assets/lightning.webp": "82dc02032078197a0380ef4849b91e80a353cde4",
     "/mom-xmas/assets/mom-xmas.png": "1fe37ecfcc94c749a61c6635a98e7fffe30df2d5",
-    "/mom-xmas/index.html": "666ee0d6d8ed0c8495469870bb079d3518f704f6",
-    "/mom-xmas/main.52b4a40127385f82.js": "9e09172a2beec2b06402b6c8aa6458489f97906c",
+    "/mom-xmas/assets/snowing.gif": "dca3d68085bab64f5a18e567f69a84ca76512d45",
+    "/mom-xmas/index.html": "8af0da6929051e700a3d9f092fc24192f6a52052",
+    "/mom-xmas/main.e31adaf1a7329b08.js": "f8a50e28d6fa5ef2cbbfcf80c8a396020c9b5149",
     "/mom-xmas/manifest.webmanifest": "edae4e9013ec9195e29c1051dc97303dbb2f6f2c",
     "/mom-xmas/polyfills.a46bd56511033644.js": "180c04c52b4c414faf328958ade2d2fdefc83336",
     "/mom-xmas/runtime.9e5a0612ff97c217.js": "a6361d5279281c07e0efe240554d2169e679a0fa",
