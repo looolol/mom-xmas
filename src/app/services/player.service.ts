@@ -55,9 +55,6 @@ export class PlayerService {
     const localList = this.getLeaderboard();
     const globalList = await this.globalLeaderboard.getTopScores();
 
-    console.log('localList', localList);
-    console.log('globalList', globalList);
-
     const map = new Map<string, LeaderboardEntry>();
 
     [...localList, ...globalList].forEach(entry => {

@@ -2,8 +2,8 @@ import {Injectable} from '@angular/core';
 import {BehaviorSubject} from 'rxjs';
 import {allPositions, BoardConfig, BoardState, getCellType} from '../models/board.model';
 import {Cell, CellType} from '../models/cell.model';
-import {randomSymbolExcluding} from '../utils/random-symbol';
-import {MATCH_CHECK_DEPTH} from '../utils/constants';
+import {randomSymbol, randomSymbolExcluding} from '../utils/random-symbol';
+import {MATCH_CHECK_DEPTH, SYMBOLS} from '../utils/constants';
 import {AnimationService} from './animation.service';
 import {Position} from '../models/position.model';
 import {
@@ -65,13 +65,25 @@ export class BoardService {
   }
 
   private fillColumn(board: BoardState, col: number): BoardState {
-    const newCells = board.cells.map(cell => {
-      if (cell.pos.col !== col || cell.type !== CellType.Normal) return cell;
+    let updatedBoard = board;
 
-      const symbolKind = this.pickSymbolForCell(board, cell);
-      return cell.withSymbol(createSymbol(symbolKind));
-    });
-    return new BoardState(board.rows, board.cols, newCells);
+    const columnCells = board.getColumn(col).filter(c => c.type === CellType.Normal);
+
+    for (const cell of columnCells) {
+      let symbolKind: string;
+      const maxAttempts = 10;
+      let attempt = 0;
+
+      do {
+        symbolKind = randomSymbol();
+        attempt++;
+      } while (this.causesMatch(updatedBoard, cell, symbolKind) && attempt < maxAttempts);
+
+      const updatedCell = cell.withSymbol(createSymbol(symbolKind));
+      updatedBoard = updatedBoard.updateCells([updatedCell]);
+    }
+
+    return updatedBoard;
   }
 
   /**
@@ -383,6 +395,14 @@ export class BoardService {
     return newBoard.cells.filter(cell => {
       return cell.symbol && !oldSymbolIds.has(cell.symbol.id);
     })
+  }
+
+  private causesMatch(board: BoardState, cell: Cell, symbolKind: string): boolean {
+    const testCell = cell.withSymbol(createSymbol(symbolKind));
+    const testBoard = board.updateCells([testCell]);
+
+    const matches = this.detectMatches(testBoard);
+    return matches.some(matchCell => matchCell.pos.equals(cell.pos));
   }
 
 

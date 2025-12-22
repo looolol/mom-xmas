@@ -294,6 +294,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
   }
 
   quitGame() {
+    this.playerService.addScore(this.score, this.currentGameSessionId);
     this.quit.emit();
   }
 }
