@@ -119,4 +119,16 @@ export class PlayerService {
       // offline /quota/ iOS safari - ignore safely
     });
   }
+
+  async syncLocalToGlobal(): Promise<void> {
+    const local = this.getLeaderboard();
+
+    const tasks = local.map(entry =>
+      this.globalLeaderboard.submitScore(entry).catch(() => {
+        // offline / quota / safari - ignore safely
+      })
+    );
+
+    await Promise.all(tasks);
+  }
 }

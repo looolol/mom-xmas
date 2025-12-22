@@ -20,3 +20,5 @@ export const MATCH_CHECK_DEPTH = 2;
 export const POINTS_PER_CELL = 10;
 
 export const LEADERBOARD_ENTRIES = 25;
+
+export const SAVE_INTERVAL_MS = 3000;

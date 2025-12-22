@@ -17,6 +17,7 @@ import {MatDialog, MatDialogModule} from '@angular/material/dialog';
 import {LeaderboardComponent} from '../leaderboard/leaderboard.component';
 import {SettingsComponent} from '../settings/settings.component';
 import {AuthService} from '../../services/auth.service';
+import {SAVE_INTERVAL_MS} from '../../utils/constants';
 
 @Component({
   selector: 'app-game-page',
@@ -42,7 +43,9 @@ export class GamePageComponent implements OnInit, OnDestroy {
   selectedCell: Cell | null = null;
   canInteract: boolean = false;
   isPaused: boolean = false;
+
   score: number = 0;
+  private lastSaveTs = 0;
 
   dialogMessage: string | null = null;
   notification: string | null = null;
@@ -120,6 +123,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
       });
 
     await this.authService.init();
+    await this.playerService.syncLocalToGlobal();
 
     if (!this.playerService.getPlayerName()) {
       this.promptSettingsAndStartGame();
@@ -131,6 +135,8 @@ export class GamePageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    window.removeEventListener('beforeunload', this.saveHighScoreOnExit);
+
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -142,16 +148,13 @@ export class GamePageComponent implements OnInit, OnDestroy {
   }
 
   promptSettingsAndStartGame() {
-    this.openSettings().afterClosed().subscribe(saved => {
-      if (this.playerService.getPlayerName()) {
-        this.startGame();
-      } else {
-        this.promptSettingsAndStartGame();
-      }
+    this.openSettings().afterClosed().subscribe(() => {
+      this.handleSettingsClosed();
     });
   }
 
   saveHighScoreOnExit = () => {
+    if (!this.currentGameSessionId) return;
     this.playerService.addScore(this.score, this.currentGameSessionId);
   }
 
@@ -192,7 +195,6 @@ export class GamePageComponent implements OnInit, OnDestroy {
     }
 
     // Check if the two cells are adjacent (horizontal or vertical neighbors)
-    const adj = this.selectedCell.isAdjacent(cell);
     if (!this.selectedCell.isAdjacent(cell)) {
       // replace with newly selected cell
       this.selectedCell = cell;
@@ -201,7 +203,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
     // Attempt swap
     await this.gameService.playerSwap(this.selectedCell, cell);
-    this.playerService.addScore(this.score, this.currentGameSessionId);
+    this.saveScoreIfNeeded();
 
     // clear selection after swap attempt
     this.selectedCell = null;
@@ -210,7 +212,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
   async onShuffleClick() {
     if (!this.canInteract) return;
     await this.gameService.shuffleBoard();
-    this.playerService.addScore(this.score, this.currentGameSessionId);
+    this.saveScoreIfNeeded();
   }
 
   async onBombClick() {
@@ -218,7 +220,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
     this.bombActive = true;
     await this.gameService.useBomb();
-    this.playerService.addScore(this.score, this.currentGameSessionId);
+    this.saveScoreIfNeeded();
     this.bombActive = false;
   }
 
@@ -231,6 +233,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
     this.isPaused = false;
 
     this.playerService.addScore(this.score, this.currentGameSessionId);
+    this.playerService.syncLocalToGlobal();
 
     this.dialog.open(LeaderboardComponent, {
       width: '90%',
@@ -241,10 +244,40 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
   openSettings() {
     this.isPaused = false;
-    return this.dialog.open(SettingsComponent, {
+
+    const ref = this.dialog.open(SettingsComponent, {
       width: '90%',
       maxWidth: '400px',
       disableClose: true,
     });
+
+    ref.afterClosed().subscribe(() => {
+      this.handleSettingsClosed();
+    });
+
+    return ref;
+  }
+
+  private handleSettingsClosed() {
+    if (!this.playerService.getPlayerName()) {
+      // invalid name, prompt again
+      this.promptSettingsAndStartGame();
+      return;
+    }
+
+    this.playerService.addScore(this.score, this.currentGameSessionId);
+    this.playerService.syncLocalToGlobal();
+
+    if (!this.currentGameSessionId) {
+      this.startGame();
+    }
+  }
+
+  private saveScoreIfNeeded() {
+    const now = Date.now();
+    if (now - this.lastSaveTs < SAVE_INTERVAL_MS) return;
+
+    this.lastSaveTs = now;
+    this.playerService.addScore(this.score, this.currentGameSessionId);
   }
 }
