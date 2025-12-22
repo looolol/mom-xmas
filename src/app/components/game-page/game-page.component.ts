@@ -1,4 +1,14 @@
-import {Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  Output,
+  output,
+  ViewChild
+} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {GameService} from '../../services/game.service';
 import {BoardComponent} from '../board/board.component';
@@ -34,6 +44,7 @@ import {SAVE_INTERVAL_MS} from '../../utils/constants';
 export class GamePageComponent implements OnInit, OnDestroy {
 
   @ViewChild('boardArea', { static: true }) boardArea!: ElementRef<HTMLDivElement>;
+  @Output() quit = new EventEmitter();
 
   private currentGameSessionId: string = '';
   tileSizePx: number = 32;
@@ -53,6 +64,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
   isHearing = true;
   isBurning = false;
   bombActive = false;
+
 
   get isTalking() {
     return !!this.dialogMessage;
@@ -279,5 +291,9 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
     this.lastSaveTs = now;
     this.playerService.addScore(this.score, this.currentGameSessionId);
+  }
+
+  quitGame() {
+    this.quit.emit();
   }
 }
