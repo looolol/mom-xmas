@@ -1,14 +1,4 @@
-import {
-  Component,
-  ElementRef,
-  EventEmitter,
-  HostListener,
-  OnDestroy,
-  OnInit,
-  Output,
-  output,
-  ViewChild
-} from '@angular/core';
+import {Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {GameService} from '../../services/game.service';
 import {BoardComponent} from '../board/board.component';
@@ -133,9 +123,6 @@ export class GamePageComponent implements OnInit, OnDestroy {
             break;
         }
       });
-
-    await this.authService.init();
-    await this.playerService.syncLocalToGlobal();
 
     if (!this.playerService.getPlayerName()) {
       this.promptSettingsAndStartGame();
