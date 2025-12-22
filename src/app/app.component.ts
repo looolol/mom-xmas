@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
 import {GamePageComponent} from './components/game-page/game-page.component';
 import {StartPageComponent} from './components/start-page/start-page.component';
 import {CommonModule} from '@angular/common';
@@ -12,7 +11,6 @@ import {PlayerService} from './services/player.service';
   selector: 'app-root',
   imports: [
     CommonModule,
-    RouterOutlet,
     StartPageComponent,
     GamePageComponent,
   ],
