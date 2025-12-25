@@ -18,6 +18,7 @@ import {LeaderboardComponent} from '../leaderboard/leaderboard.component';
 import {SettingsComponent} from '../settings/settings.component';
 import {AuthService} from '../../services/auth.service';
 import {SAVE_INTERVAL_MS} from '../../utils/constants';
+import {CheatSheetComponent} from '../cheat-sheet/cheat-sheet.component';
 
 @Component({
   selector: 'app-game-page',
@@ -158,6 +159,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
   saveHighScoreOnExit = () => {
     if (!this.currentGameSessionId) return;
     this.playerService.addScore(this.score, this.currentGameSessionId);
+    this.playerService.syncLocalToGlobal();
   }
 
   @HostListener('window:resize')
@@ -241,7 +243,20 @@ export class GamePageComponent implements OnInit, OnDestroy {
       width: '90%',
       maxWidth: '600px',
       disableClose: false,
-    })
+    });
+  }
+
+  cheatSheet() {
+    this.isPaused = false;
+
+    this.playerService.addScore(this.score, this.currentGameSessionId);
+    this.playerService.syncLocalToGlobal();
+
+    this.dialog.open(CheatSheetComponent, {
+      width: '90%',
+      maxWidth: '600px',
+      disableClose: false,
+    });
   }
 
   openSettings() {
@@ -281,10 +296,12 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
     this.lastSaveTs = now;
     this.playerService.addScore(this.score, this.currentGameSessionId);
+    this.playerService.syncLocalToGlobal();
   }
 
   quitGame() {
     this.playerService.addScore(this.score, this.currentGameSessionId);
+    this.playerService.syncLocalToGlobal();
     this.quit.emit();
   }
 }

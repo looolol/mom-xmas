@@ -9,4 +9,5 @@ export interface LeaderboardEntry {
   score: number;
   date: number;
   sessionId: string;
+  rank?: number;
 }

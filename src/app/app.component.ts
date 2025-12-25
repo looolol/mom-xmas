@@ -6,6 +6,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {SettingsComponent} from './components/settings/settings.component';
 import {LeaderboardComponent} from './components/leaderboard/leaderboard.component';
 import {PlayerService} from './services/player.service';
+import {CheatSheetComponent} from './components/cheat-sheet/cheat-sheet.component';
 
 @Component({
   selector: 'app-root',
@@ -39,6 +40,14 @@ export class AppComponent {
       maxWidth: '400px',
       disableClose: true,
     });
+  }
+
+  onOpenCheatSheet() {
+    const ref = this.dialog.open(CheatSheetComponent, {
+      width: '90%',
+      maxWidth: '400px',
+      disableClose: false,
+    })
   }
 
   onOpenSettings() {
