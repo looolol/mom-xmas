@@ -8,7 +8,7 @@
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;  // Keep each cell square
-  font-size: clamp(16px, 2vw, 28px);  // responsive font size
+  font-size: 80%;
   border-radius: $cell-border-radius-px;
   background-color: $cell-bg-color;
   cursor: pointer;
