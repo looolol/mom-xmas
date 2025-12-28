@@ -1,12 +1,12 @@
 import { Component } from '@angular/core';
-import {GamePageComponent} from './components/game-page/game-page.component';
-import {StartPageComponent} from './components/start-page/start-page.component';
 import {CommonModule} from '@angular/common';
 import {MatDialog} from '@angular/material/dialog';
-import {SettingsComponent} from './components/settings/settings.component';
-import {LeaderboardComponent} from './components/leaderboard/leaderboard.component';
-import {PlayerService} from './services/player.service';
-import {CheatSheetComponent} from './components/cheat-sheet/cheat-sheet.component';
+import {StartPageComponent} from './core/components/start-page/start-page.component';
+import {GamePageComponent} from './features/game/components/game-page/game-page.component';
+import {PlayerService} from './features/player/services/player.service';
+import {LeaderboardComponent} from './features/player/components/leaderboard/leaderboard.component';
+import {CheatSheetComponent} from './features/game/components/cheat-sheet/cheat-sheet.component';
+import {SettingsComponent} from './features/player/components/settings/settings.component';
 
 @Component({
   selector: 'app-root',

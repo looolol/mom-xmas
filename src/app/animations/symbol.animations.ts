@@ -1,5 +1,5 @@
 import {animate, keyframes, state, style, transition, trigger} from '@angular/animations';
-import {AnimationMode} from '../models/animation.model';
+import {AnimationMode} from './models/animation.model';
 
 
 export const motionAnimation = trigger('motion', [
