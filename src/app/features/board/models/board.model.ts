@@ -1,7 +1,9 @@
-import {Cell, CellType} from './cell.model';
+import {Cell, CellType, isCellTypeUseable} from './cell.model';
 import {Position} from '../../../core/models/position.model';
 import {EmojiToken, Token, TokenVisual} from './token';
 import {Level} from '../../game/models/level.model';
+import {Dir, getDirectionDelta} from '../../../core/models/direction.model';
+import {getRandomInt} from '../../../core/utils/random';
 
 
 export interface BoardConfig {
@@ -17,14 +19,56 @@ export function getCellType(pos: Position, layout: CellType[][] | undefined) {
 
 
 export class Board {
+  public readonly tokenFactory: TokenFactory;
+
   constructor(
-    public readonly rows: number,
-    public readonly cols: number,
+    public readonly config: BoardConfig,
     public readonly cells: Cell[]
-  ) {}
+  ) {
+    this.tokenFactory = config.tokenFactory ?? (() => undefined);
+  }
 
   /**
-   * Get linear index in cells array from Position or (row, col)
+   * --- Board Helpers ---
+   */
+
+  /**
+   * returns number of rows from config
+   */
+  get rows(): number {
+    return this.config.rows;
+  }
+
+  /**
+   * returns number of cols from config
+   */
+  get cols(): number {
+    return this.config.cols;
+  }
+
+  /**
+   * Check if cell at pos has a token
+   */
+  hasTokenAt(pos: Position): boolean {
+    return this.getCell(pos)?.hasToken() ?? false;
+  }
+
+  /**
+   * Checks if there are any matches present in board
+   */
+  hasMatches(): boolean {
+    return this.findMatches().length > 0;
+  }
+
+  /**
+   * Validate if position is within board bounds.
+   */
+  isValidPosition(pos: Position): boolean {
+    return pos.row >= 0 && pos.row < this.rows && pos.col >= 0 && pos.col < this.cols;
+  }
+
+  /**
+   * Gets cell index from Position or (row, col)
    */
   getIndex(pos: Position): number | undefined;
   getIndex(row: number, col: number): number | undefined;
@@ -83,15 +127,15 @@ export class Board {
    */
   getRunLength(start: Position, delta: Position): number {
     const startCell = this.getCell(start);
-    if (!startCell?.token) return 0;
+    if (!startCell?.hasToken()) return 0;
 
-    const baseVisual = startCell.token.visual;
+    const baseVisual = startCell.tokenVisual;
     let length = 1;
     let currentPos = start.add(delta);
 
     while (this.isValidPosition(currentPos)) {
       const cell = this.getCell(currentPos);
-      if (!cell?.token || cell.token.visual !== baseVisual) break;
+      if (!cell?.hasToken() || cell.tokenVisual !== baseVisual) break;
 
       length++;
       currentPos = currentPos.add(delta);
@@ -101,37 +145,180 @@ export class Board {
   }
 
   /**
+   * Returns all matches in a direction
+   */
+  findMatchesInDirection(delta: Position): Set<Cell> {
+    const matchedCells = new Set<Cell>();
+
+    for (const cell of this.cells) {
+      if (!cell.hasToken()) continue;
+
+      const prevPos = cell.pos.add(delta.multiply(-1));
+      const prevCell = this.getCell(prevPos);
+      if (prevCell?.tokenVisual === cell.tokenVisual) continue;
+
+      const runLength = this.getRunLength(cell.pos, delta);
+
+      if (runLength >= 3) {
+        for (let i = 0; i < runLength; i++) {
+          const matchPos = cell.pos.add(delta.multiply(i));
+          const matchCell = this.getCell(matchPos);
+          if (matchCell) matchedCells.add(matchCell);
+        }
+      }
+    }
+
+    return matchedCells;
+  }
+
+  /**
+   * Finds all matches on the board
+   */
+  findMatches(): Cell[] {
+    const horizontalMatches = this.findMatchesInDirection(getDirectionDelta(Dir.RIGHT));
+    const verticalMatches = this.findMatchesInDirection(getDirectionDelta(Dir.DOWN));
+
+    const allMatches = new Set<Cell>([ ...horizontalMatches, ...verticalMatches ]);
+    return Array.from(allMatches);
+  }
+
+  /**
+   * Compares this to an old board state and returns cells with new tokens.
+   * Useful to help animate those new tokens
+   */
+  getNewTokens(oldBoard: Board): Cell[] {
+    const oldTokenIds = new Set<string>();
+
+    for (const cell of oldBoard.cells) {
+      if (cell.token) oldTokenIds.add(cell.token.id);
+    }
+
+    return this.cells.filter(cell => {
+      return cell.token && !oldTokenIds.has(cell.token.id);
+    });
+  }
+
+
+  /**
+   * --- Board Transformations ---
+   */
+
+  /**
    * Create a new Board with updated cells, replacing existing cells
    * matching updatedCells positions.
    */
   updateCells(updatedCells: Cell[]): Board {
+    const updatedMap = new Map(updatedCells.map(c => [c.index, c]));
+    const newCells = this.cells.map(cell => updatedMap.get(cell.index) ?? cell);
+    return new Board(this.config, newCells);
+  }
+
+  /**
+   * Create new board with cell a and b's tokens swapped
+   */
+  swapCells(a: Cell, b: Cell): Board {
+    return this.updateCells([
+      a.withToken(b.token),
+      b.withToken(a.token),
+    ]);
+  }
+
+  /**
+   * Create new board where all cells marked to clear
+   * have there tokens removed
+   */
+  clearCells(cellsToClear: Cell[]): Board {
+    if (cellsToClear.length === 0) return this;
+
+    const newCells = cellsToClear.map(c => c.withToken(undefined));
+    return this.updateCells(newCells);
+  }
+
+  /**
+   * Returns a new Board where a row has been rotated one cell cw or ccw
+   */
+  rotateRow(row: number, dir: Dir.LEFT | Dir.RIGHT): Board {
+    const rowCells = this.getRow(row);
+    const tokens = rowCells.map(c => c.token);
+
+    const rotated =
+      dir === Dir.LEFT
+        ? [...tokens.slice(1), tokens[0]]
+        : [tokens[tokens.length - 1], ...tokens.slice(0, -1)];
+
+    const updated = rowCells.map((cell, i) =>
+      cell.withToken(rotated[i])
+    );
+
+    return this.updateCells(updated);
+  }
+
+  /**
+   * Returns a new board with all the Tokens shuffled
+   */
+  shuffleBoard() {
+    const tokens = this.cells
+      .filter(cell => cell.hasToken())
+      .map(cell => cell.token!);
+
+    for (let i = tokens.length - 1; i > 0; i--) {
+      // shuffle with any index from 0 to i
+      const j = getRandomInt(0, i + 1);
+      [tokens[i], tokens[j]] = [tokens[j], tokens[i]];
+    }
+
     const newCells = this.cells.map(cell => {
-      const updatedCell = updatedCells.find(c => c.pos.equals(cell.pos));
-      return updatedCell ?? cell;
+      if (cell.hasToken()) {
+        const newToken = tokens.pop()!;
+        return cell.withToken(newToken);
+      }
+      return cell;
     });
-    return new Board(this.rows, this.cols, newCells);
+
+    return this.updateCells(newCells);
   }
 
   /**
-   * Check if cell at pos has a token
+   * Applies gravity to the board, shifting all tokens
+   * sitting above empty cells down.
+   * Then spawns new tokens from TokenFactory
    */
-  hasTokenAt(pos: Position): boolean {
-    return !!this.getCell(pos)?.token;
+  applyGravity(): Board {
+    let updatedCells: Cell[] = [];
+
+    for (let col = 0; col < this.cols; col++) {
+      // get all tokens in column
+      const column = this.getColumn(col);
+      const existingTokens = column
+        .filter(c => c.hasToken())
+        .map(c => c.token);
+
+      const missingCount = column.length - existingTokens.length;
+      const newTokens = Array.from(
+        { length: missingCount },
+        () => this.tokenFactory(new Set<TokenVisual>())
+      );
+
+      const updatedColumnTokens = [...newTokens, ...existingTokens];
+
+      column.forEach((cell, i) => {
+        updatedCells.push(cell.withToken(updatedColumnTokens[i]));
+      });
+    }
+
+    return this.updateCells(updatedCells);
   }
 
-  /**
-   * Check if cell at pos is type Blocked
-   */
-  isBlockedAt(pos: Position): boolean {
-    return this.getCell(pos)?.isBlocked() ?? false;
+  resolveMatches(): Board {
+    const matches = this.findMatches();
+    if (!matches.length) return this;
+    return this.clearCells(matches);
   }
 
+
   /**
-   * Validate if position is within board bounds.
+   * --- Static Factory Methods ---
    */
-  isValidPosition(pos: Position): boolean {
-    return pos.row >= 0 && pos.row < this.rows && pos.col >= 0 && pos.col < this.cols;
-  }
 
   /**
    */
@@ -142,25 +329,24 @@ export class Board {
     for (const pos of allPositions(config.rows, config.cols)) {
       const index = pos.row * config.cols + pos.col;
       const type = getCellType(pos, config.layout);
+      let token: Token | undefined = undefined;
 
-      // No token for blocked / null cells
-      if (type === CellType.Blocked || type === CellType.Null) {
-        cells.push(new Cell(pos, index, type));
-        continue;
+      // If cell can have a token
+      if (isCellTypeUseable(type)) {
+        token = tokenFactory(getExcludedTokens(pos, config.cols, cells));
       }
-
-      const token = tokenFactory(getExcludedTokens(pos, config.cols, cells));
 
       cells.push(new Cell(pos, index, type, token));
     }
 
-    return new Board(config.rows, config.cols, cells);
+    return new Board(config, cells);
   }
 
   static createFromLevel(level: Level): Board {
     return this.createNewBoard(level.boardConfig);
   }
 }
+
 
 export function* allPositions(rows: number, cols: number): IterableIterator<Position> {
   for (let row = 0; row < rows; row++) {
@@ -170,13 +356,14 @@ export function* allPositions(rows: number, cols: number): IterableIterator<Posi
   }
 }
 
+
 function getTokenVisualAt(pos: Position, cols: number, cells: Cell[]): TokenVisual | undefined{
   if (pos.row < 0 || pos.col < 0) return undefined;
 
   const index = pos.row * cols + pos.col;
   if (index >= cells.length) return undefined;
 
-  return cells[index]?.token?.visual;
+  return cells[index]?.tokenVisual;
 }
 
 function getExcludedTokens(pos: Position, cols: number, cells: Cell[]) {
@@ -196,7 +383,7 @@ function getExcludedTokens(pos: Position, cols: number, cells: Cell[]) {
     excludedTokens.add(up1);
   }
 
-  return excludedTokens
+  return excludedTokens;
 }
 
 

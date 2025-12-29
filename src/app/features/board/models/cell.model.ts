@@ -1,5 +1,6 @@
 import {Token, TokenVisual} from './token';
 import {Position} from '../../../core/models/position.model';
+import {getRandomFrom} from '../../../core/utils/random';
 
 export enum CellType {
   Normal = 0,
@@ -9,7 +10,11 @@ export enum CellType {
 
 export function getRandomCellType(): CellType {
   const values = Object.values(CellType);
-  return values[Math.floor(Math.random() * values.length)] as CellType;
+  return getRandomFrom(values) as CellType;
+}
+
+export function isCellTypeUseable(type: CellType): boolean {
+  return type !== CellType.Blocked && type !== CellType.Null;
 }
 
 export class Cell {
@@ -21,11 +26,7 @@ export class Cell {
     public readonly token?: Token,
   ) { }
 
-  isBlocked(): boolean {
-    return this.type === CellType.Blocked;
-  }
-
-  hasToken(): boolean {
+  hasToken(): this is Cell & { token: Token } {
     return !!this.token;
   }
 

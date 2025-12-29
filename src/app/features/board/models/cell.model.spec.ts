@@ -15,11 +15,6 @@ describe('Cell', () => {
     expect(cell.token).toBe(token);
   });
 
-  it('isBlocked returns true for Blocked cells', () => {
-    expect(new Cell(pos, index, CellType.Blocked).isBlocked()).toBeTrue();
-    expect(new Cell(pos, index, CellType.Normal).isBlocked()).toBeFalse();
-  });
-
   it('hasToken returns true if token exists', () => {
     expect(new Cell(pos, index, CellType.Normal, token).hasToken()).toBeTrue();
     expect(new Cell(pos, index, CellType.Normal).hasToken()).toBeFalse();

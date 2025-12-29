@@ -1,4 +1,5 @@
 import {TOKENS} from '../../../core/utils/constants';
+import {getRandomFrom} from '../../../core/utils/random';
 
 export enum TokenType {
   Emoji = 'emoji',
@@ -47,7 +48,7 @@ export class EmojiToken extends Token {
 
   static random(excluding: Set<string> = new Set()): EmojiToken {
     const options = TOKENS.filter(s => !excluding.has(s));
-    const emoji = options[Math.floor(Math.random() * options.length)];
+    const emoji = getRandomFrom(options);
     return new EmojiToken(emoji);
   }
 }

@@ -1,8 +1,9 @@
-import {Board} from './board.model';
+import {Board, BoardConfig, EmojiTokenFactory} from './board.model';
 import {LEVEL_1} from '../../game/levels/level1';
-import {Cell, CellType} from './cell.model';
+import {Cell, CellType, isCellTypeUseable} from './cell.model';
 import {Position} from '../../../core/models/position.model';
 import {EmojiToken} from './token';
+import {Dir} from '../../../core/models/direction.model';
 
 describe('Board Creation from Level', () => {
   let board: Board;
@@ -41,7 +42,7 @@ describe('Board Creation from Level', () => {
   });
 
   it('should place tokens on non-blocked cells', () => {
-    const nonBlockedCells = board.cells.filter(c => c.type !== CellType.Blocked && c.type !== CellType.Null);
+    const nonBlockedCells = board.cells.filter(c => isCellTypeUseable(c.type));
     const tokensCount = nonBlockedCells.filter(c => !!c.token).length;
     expect(tokensCount).toBeGreaterThan(0);
   });
@@ -86,10 +87,85 @@ describe('Board Creation from Level', () => {
 });
 
 describe('Board', () => {
+  let config: BoardConfig;
   let board: Board;
 
+  function createTestBoardWithHorizontalRun(): Board {
+    const rows = 3;
+    const cols = 5;
+    const cells: Cell[] = [];
+
+    const config: BoardConfig = {
+      rows: rows,
+      cols: cols,
+      tokenFactory: EmojiTokenFactory
+    }
+
+    // Create a token to use for the run
+    const runToken = new EmojiToken('😀');
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const pos = new Position(row, col);
+        const index = row * cols + col;
+        let token: EmojiToken | undefined;
+
+        // Create a horizontal run of 3 tokens at row 0, col 0..2
+        if (row === 0 && col >= 0 && col <= 2) {
+          token = runToken;
+        } else {
+          // Different token for others to avoid accidental matches
+          token = new EmojiToken('😎');
+        }
+
+        cells.push(new Cell(pos, index, CellType.Normal, token));
+      }
+    }
+
+    return new Board(config, cells);
+  }
+
+
   beforeEach(() => {
+    config = LEVEL_1.boardConfig;
     board = Board.createFromLevel(LEVEL_1);
+  });
+
+  it('rows should return correct number of rows', () => {
+    expect(board.rows).toBeDefined();
+    expect(board.rows).toEqual(config.rows);
+  });
+
+  it('cols should return correct number of cols', () => {
+    expect(board.cols).toBeDefined();
+    expect(board.cols).toEqual(config.cols);
+  });
+
+  it('hasTokenAt should return true if token exists at position', () => {
+    const cellWithToken = board.cells.find(c => c.token);
+    if (!cellWithToken) return;
+
+    expect(board.hasTokenAt(cellWithToken.pos)).toBeTrue();
+    expect(board.hasTokenAt(new Position(-1, -1))).toBeFalse();
+  });
+
+  it('hasMatches should return false on a blank board with no matches', () => {
+    expect(board.hasMatches()).toBeFalse();
+  });
+
+  it('hasMatches should return true on a board with a match', () => {
+    const testBoard = createTestBoardWithHorizontalRun();
+    expect(testBoard.hasMatches()).toBeTrue();
+  });
+
+  it('isValidPosition should validate position bounds correctly', () => {
+    expect(board.isValidPosition(new Position(0, 0))).toBeTrue();
+    expect(board.isValidPosition(new Position(board.rows - 1, board.cols - 1))).toBeTrue();
+
+    expect(board.isValidPosition(new Position(-1, 0))).toBeFalse();
+    expect(board.isValidPosition(new Position(0, -1))).toBeFalse();
+    expect(board.isValidPosition(new Position(board.rows, 0))).toBeFalse();
+    expect(board.isValidPosition(new Position(0, board.cols))).toBeFalse();
   });
 
 
@@ -136,40 +212,45 @@ describe('Board', () => {
     }
   });
 
-  function createTestBoardWithHorizontalRun(): Board {
-    const rows = 3;
-    const cols = 5;
-    const cells: Cell[] = [];
-
-    // Create a token to use for the run
-    const runToken = new EmojiToken('😀');
-
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const pos = new Position(row, col);
-        const index = row * cols + col;
-        let token: EmojiToken | undefined;
-
-        // Create a horizontal run of 3 tokens at row 0, col 0..2
-        if (row === 0 && col >= 0 && col <= 2) {
-          token = runToken;
-        } else {
-          // Different token for others to avoid accidental matches
-          token = new EmojiToken('😎');
-        }
-
-        cells.push(new Cell(pos, index, CellType.Normal, token));
-      }
-    }
-
-    return new Board(rows, cols, cells);
-  }
-
   it('getRunLength should return correct run length on controlled board', () => {
     const testBoard = createTestBoardWithHorizontalRun();
 
     expect(testBoard.getRunLength(new Position(0, 0), new Position(0, 1))).toBe(3);
     expect(testBoard.getRunLength(new Position(0, 0), new Position(1, 0))).toBe(1);
+  });
+
+  it('getNewCells should return empty array if no new tokens', () => {
+    const newTokens = board.getNewTokens(board);
+    expect(newTokens.length).toBe(0);
+  });
+
+  it ('getNewCells should return cells with tokens that are new compared to old board', () => {
+    const oldBoard = board;
+
+    const cellToUpdate = board.cells.find(c => c.hasToken());
+    expect(cellToUpdate).toBeDefined();
+
+    const newToken = EmojiToken.random(new Set());
+    const updatedCell = cellToUpdate!.withToken(newToken);
+    const newCells = [updatedCell];
+
+    const newBoard = board.updateCells(newCells);
+    const newTokens = newBoard.getNewTokens(board);
+
+    expect(newTokens.length).toBe(1);
+    expect(newTokens[0].pos).toEqual(updatedCell.pos);
+    expect(newTokens[0].token!.id).toBe(newToken.id);
+  });
+
+  it('getNewCells should not consider cells without tokens as  new tokens', () => {
+    const clearedCell = board.cells.find(c => c.hasToken());
+    expect(clearedCell).toBeDefined();
+
+    const updatedCell = clearedCell!.withToken(undefined);
+    const newBoard = board.updateCells([updatedCell]);
+
+    const newTokens = newBoard.getNewTokens(board);
+    expect(newTokens.length).toBe(0);
   });
 
   it ('updatesCells should update specified cells and keep others unchanged', () => {
@@ -182,31 +263,80 @@ describe('Board', () => {
     expect(updatedBoard.cells[1]).toEqual(board.cells[1]);
   });
 
-  it('hasTokenAt should return true if token exists at position', () => {
-    const cellWithToken = board.cells.find(c => c.token);
-    if (!cellWithToken) return;
+  it('swapCells should swap tokens between two cells', () => {
+    const cellA = board.cells[0];
+    const cellB = board.cells[1];
 
-    expect(board.hasTokenAt(cellWithToken.pos)).toBeTrue();
-    expect(board.hasTokenAt(new Position(-1, -1))).toBeFalse();
+    const swappedBoard = board.swapCells(cellA, cellB);
+
+    expect(swappedBoard.getCell(cellA.pos)?.token).toEqual(cellB.token);
+    expect(swappedBoard.getCell(cellB.pos)?.token).toEqual(cellA.token);
   });
 
-  it('isBlockedAt should return true for blocked cells', () => {
-    const blockedCell = board.cells.find(c => c.type === CellType.Blocked);
-    if (!blockedCell) return;
+  it('rotateRow should rotate tokens left and right', () => {
+    const row = 0;
+    const originalTokens = board.getRow(row).map(c => c.token);
 
-    expect(board.isBlockedAt(blockedCell.pos)).toBeTrue();
-    expect(board.isBlockedAt(new Position(-1, -1))).toBeFalse();
+    const rotatedLeft = board.rotateRow(row, Dir.LEFT);
+    const rotatedLeftTokens = rotatedLeft.getRow(row).map(c => c.token);
+    expect(rotatedLeftTokens).toEqual([...originalTokens.slice(1), originalTokens[0]]);
+
+    const rotatedRight = board.rotateRow(row, Dir.RIGHT);
+    const rotatedRightTokens = rotatedRight.getRow(row).map(c => c.token);
+    expect(rotatedRightTokens).toEqual([originalTokens[originalTokens.length - 1], ...originalTokens.slice(0, -1)]);
   });
 
-  it('isValidPosition should validate position bounds correctly', () => {
-    expect(board.isValidPosition(new Position(0, 0))).toBeTrue();
-    expect(board.isValidPosition(new Position(board.rows - 1, board.cols - 1))).toBeTrue();
+  it('shuffleBoard should shuffle tokens but keep token count same', () => {
+    const tokensBefore = board.cells.filter(c => c.hasToken()).map(c => c.token);
+    const shuffledBoard = board.shuffleBoard();
+    const tokensAfter = shuffledBoard.cells.filter(c => c.hasToken()).map(c => c.token);
 
-    expect(board.isValidPosition(new Position(-1, 0))).toBeFalse();
-    expect(board.isValidPosition(new Position(0, -1))).toBeFalse();
-    expect(board.isValidPosition(new Position(board.rows, 0))).toBeFalse();
-    expect(board.isValidPosition(new Position(0, board.cols))).toBeFalse();
+    expect(tokensAfter.length).toBe(tokensBefore.length);
+
+    // Sort token IDs to compare content ignoring order
+    const idsBefore = tokensBefore.map(t => t.id).sort();
+    const idsAfter = tokensAfter.map(t => t.id).sort();
+    expect(idsAfter).toEqual(idsBefore);
   });
 
+  it('applyGravity should drop tokens and add new tokens at top', () => {
+    // clear first 3 in second column, top row has to drop
+    const clearedCells = [
+      board.getCell(1, 0)!,
+      board.getCell(1, 1)!,
+      board.getCell(1, 2)!,
+    ];
+    const clearedBoard = board.clearCells(clearedCells);
+
+    const gravityApplied = clearedBoard.applyGravity();
+
+    const originalTokenCount = board.cells.filter(c => c.hasToken()).length;
+    const newTokenCount = gravityApplied.cells.filter(c => c.hasToken()).length;
+
+    expect(newTokenCount).toBe(originalTokenCount);
+
+    // now check if top 3 fell down
+    const oldTopRow = board.cells.slice(0, 3);
+    const oldTopRowAfterGravity = gravityApplied.cells.slice(config.cols, config.cols + 3);
+    const newTopRow = gravityApplied.cells.slice(0, 3);
+    for (let i = 0; i < oldTopRow.length; i++) {
+     expect(oldTopRow[i].token).toEqual(oldTopRowAfterGravity[i].token);
+     expect(newTopRow[i].token).not.toEqual(oldTopRow[i].token);
+     expect(oldTopRowAfterGravity[i].token).not.toEqual(newTopRow[i].token);
+    }
+  });
+
+  it('resolveMatches should clear matched cells', () => {
+    const testBoard = createTestBoardWithHorizontalRun();
+    const matches = testBoard.findMatches();
+    expect(matches.length).toBeGreaterThan(0);
+
+    const clearedBoard = testBoard.resolveMatches();
+
+    for (const matchCell of matches) {
+      const cellAfterClear = clearedBoard.getCell(matchCell.pos);
+      expect(cellAfterClear?.token).toBeUndefined();
+    }
+  })
 
 });

@@ -146,7 +146,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
   startGame() {
     this.currentGameSessionId = Date.now().toString();
-    this.gameService.startGame(LEVEL_1.boardConfig);
+    // this.gameService.startGame(LEVEL_1.boardConfig);
     this.calculateTileSize(); // init calc
   }
 
@@ -206,7 +206,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
     }
 
     // Attempt swap
-    await this.gameService.playerSwap(this.selectedCell, cell);
+    // await this.gameService.playerSwap(this.selectedCell, cell);
     this.saveScoreIfNeeded();
 
     // clear selection after swap attempt
@@ -215,7 +215,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
   async onShuffleClick() {
     if (!this.canInteract) return;
-    await this.gameService.shuffleBoard();
+    // await this.gameService.shuffleBoard();
     this.saveScoreIfNeeded();
   }
 
@@ -223,7 +223,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
     if (!this.canInteract) return;
 
     this.bombActive = true;
-    await this.gameService.useBomb();
+    // await this.gameService.useBomb();
     this.saveScoreIfNeeded();
     this.bombActive = false;
   }
