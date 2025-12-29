@@ -1,4 +1,4 @@
-import { SymbolModel } from './symbol.model';
+import {Token, TokenVisual} from './token';
 import {Position} from '../../../core/models/position.model';
 
 export enum CellType {
@@ -7,36 +7,38 @@ export enum CellType {
   Null = 2,
 }
 
-const cellTypes = Object.values(CellType)
-    .filter(v => typeof v === 'number') as number[];
-
-export function getRandomCellType(): number {
-  const index = Math.floor(Math.random() * cellTypes.length);
-  return cellTypes[index];
+export function getRandomCellType(): CellType {
+  const values = Object.values(CellType);
+  return values[Math.floor(Math.random() * values.length)] as CellType;
 }
 
 export class Cell {
+
   constructor(
-    public pos: Position,
-    public index: number,
-    public type: CellType,
-    public symbol?: SymbolModel,
+    public readonly pos: Position,
+    public readonly index: number,
+    public readonly type: CellType,
+    public readonly token?: Token,
   ) { }
 
-  isBlocked(): this is { symbol: SymbolModel} {
+  isBlocked(): boolean {
     return this.type === CellType.Blocked;
   }
 
-  hasSymbol(): boolean {
-    return !!this.symbol;
+  hasToken(): boolean {
+    return !!this.token;
   }
 
-  getSymbolKind(): string | undefined {
-    return this.symbol?.kind;
+  get tokenVisual(): TokenVisual | undefined {
+    return this.token?.visual;
   }
 
-  withSymbol(symbolModel: SymbolModel | undefined): Cell {
-    return new Cell(this.pos, this.index, this.type, symbolModel);
+  withToken(token: Token | undefined): Cell {
+    return new Cell(this.pos, this.index, this.type, token);
+  }
+
+  withType(type: CellType) {
+    return new Cell(this.pos, this.index, type, this.token);
   }
 
   isAdjacent(other: Cell): boolean {

@@ -1,8 +1,7 @@
 import {Injectable} from '@angular/core';
 import {BehaviorSubject} from 'rxjs';
-import {allPositions, BoardConfig, BoardState, getCellType} from '../models/board.model';
-import {Cell, CellType} from '../models/cell.model';
-import {createSymbol, randomSymbol, randomSymbolExcluding} from '../models/symbol.model';
+import {BoardConfig, Board} from '../models/board.model';
+import {Cell} from '../models/cell.model';
 import { AnimationService } from '../../../animations/services/animation.service';
 import {
   Dir,
@@ -12,139 +11,96 @@ import {
   getSwapDirection
 } from '../../../core/models/direction.model';
 import {Position} from '../../../core/models/position.model';
-import {AnimationMode, SymbolAnimation} from '../../../animations/models/animation.model';
+import {AnimationMode, TokenAnimation} from '../../../animations/models/animation.model';
 import {MATCH_CHECK_DEPTH} from '../../../core/utils/constants';
+import {LEVEL_1} from '../../game/levels/level1';
+import {EmojiToken, Token} from '../models/token';
 
 @Injectable({
   providedIn: 'root'
 })
 export class BoardService {
 
-  private readonly _board$ = new BehaviorSubject<BoardState | null>(null)
+  private readonly _board$ = new BehaviorSubject<Board | null>(null)
   readonly board$ = this._board$.asObservable();
 
 
   constructor(private animationService: AnimationService) { }
 
 
-  get board(): BoardState | null {
+  get board(): Board | null {
     return this._board$.getValue();
   }
 
-  updateBoard(newBoard: BoardState) {
+  updateBoard(newBoard: Board) {
     this._board$.next(newBoard);
   }
 
   initBoard(config: BoardConfig) {
-    const board = this.createNewBoard(config);
-    this.updateBoard(this.seedBoard(board));
-  }
-
-
-  private createNewBoard({rows, cols, layout}: BoardConfig): BoardState {
-    const cells: Cell[] = [];
-
-    for (let pos of allPositions(rows, cols)) {
-      cells.push(new Cell(
-        pos,
-        pos.row * cols + pos.col,
-        getCellType(pos.row, pos.col, layout),
-      ));
-    }
-
-    return new BoardState(rows, cols, cells);
-  }
-
-  private seedBoard(board: BoardState) {
-    let newBoard = board;
-    for (let col = 0; col < board.cols; col++) {
-      newBoard = this.fillColumn(newBoard, col);
-    }
-    return newBoard;
-  }
-
-  private fillColumn(board: BoardState, col: number): BoardState {
-    let updatedBoard = board;
-
-    const columnCells = board.getColumn(col).filter(c => c.type === CellType.Normal);
-
-    for (const cell of columnCells) {
-      let symbolKind: string;
-      const maxAttempts = 10;
-      let attempt = 0;
-
-      do {
-        symbolKind = randomSymbol();
-        attempt++;
-      } while (this.causesMatch(updatedBoard, cell, symbolKind) && attempt < maxAttempts);
-
-      const updatedCell = cell.withSymbol(createSymbol(symbolKind));
-      updatedBoard = updatedBoard.updateCells([updatedCell]);
-    }
-
-    return updatedBoard;
+    const board = Board.createFromLevel(LEVEL_1);
+    this.updateBoard(board);
   }
 
   /**
    * --- Board State Mutations ---
    */
 
-  swapCells(board: BoardState, a: Cell, b: Cell): BoardState {
+  swapCells(board: Board, a: Cell, b: Cell): Board {
     const newCells = board.cells.map(cell => {
-      if (cell.pos.equals(a.pos)) return cell.withSymbol(b.symbol);
-      if (cell.pos.equals(b.pos)) return cell.withSymbol(a.symbol);
+      if (cell.pos.equals(a.pos)) return cell.withToken(b.token);
+      if (cell.pos.equals(b.pos)) return cell.withToken(a.token);
       return cell;
     });
-    return new BoardState(board.rows, board.cols, newCells);
+    return new Board(board.rows, board.cols, newCells);
   }
 
-  clearCells(board: BoardState, cellsToClear: Cell[]): BoardState {
+  clearCells(board: Board, cellsToClear: Cell[]): Board {
     const clearedCells = board.cells.map(cell =>
-      cellsToClear.some(c => c.pos.equals(cell.pos)) ? cell.withSymbol(undefined) : cell
+      cellsToClear.some(c => c.pos.equals(cell.pos)) ? cell.withToken(undefined) : cell
     );
-    return new BoardState(board.rows, board.cols, clearedCells);
+    return new Board(board.rows, board.cols, clearedCells);
   }
 
-  rotateRow(board: BoardState, row: number, dir: Dir.LEFT | Dir.RIGHT): BoardState {
+  rotateRow(board: Board, row: number, dir: Dir.LEFT | Dir.RIGHT): Board {
     const rowCells = board.getRow(row);
-    const symbols = rowCells.map(c => c.symbol);
+    const tokens = rowCells.map(c => c.token);
 
     const rotated =
         dir === Dir.LEFT
-          ? [...symbols.slice(1), symbols[0]]
-          : [symbols[symbols.length - 1], ...symbols.slice(0, -1)];
+          ? [...tokens.slice(1), tokens[0]]
+          : [tokens[tokens.length - 1], ...tokens.slice(0, -1)];
 
     const updated = rowCells.map((cell, i) =>
-      cell.withSymbol(rotated[i])
+      cell.withToken(rotated[i])
     );
 
     return board.updateCells(updated);
   }
 
-  shuffleBoard(board: BoardState) {
+  shuffleBoard(board: Board) {
     if (!board) return board;
 
-    const symbols = board.cells
-      .filter(cell => cell.symbol)
-      .map(cell => cell.symbol!);
+    const tokens = board.cells
+      .filter(cell => cell.token)
+      .map(cell => cell.token!);
 
-    for (let i = symbols.length - 1; i > 0; i--) {
+    for (let i = tokens.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [symbols[i], symbols[j]] = [symbols[j], symbols[i]];
+      [tokens[i], tokens[j]] = [tokens[j], tokens[i]];
     }
 
     const newCells = board.cells.map(cell => {
-      if (cell.symbol) {
-        const newSymbol = symbols.pop()!;
-        return cell.withSymbol(newSymbol);
+      if (cell.token) {
+        const newtoken = tokens.pop()!;
+        return cell.withToken(newtoken);
       }
       return cell;
     });
 
-    return new BoardState(board.rows, board.cols, newCells);
+    return new Board(board.rows, board.cols, newCells);
   }
 
-  getBomb(board: BoardState): Cell[] {
+  getBomb(board: Board): Cell[] {
     const centerRow = this.getRandomInt(1, board.rows - 2);
     const centerCol = this.getRandomInt(1, board.cols - 2);
 
@@ -152,7 +108,7 @@ export class BoardService {
     for (let r = centerRow - 1; r <= centerRow + 1; r++) {
       for (let c = centerCol - 1; c <= centerCol + 1; c++) {
         const cell = board.getCell(new Position(r, c));
-        if (cell && cell.symbol) {
+        if (cell && cell.token) {
           cellsToClear.push(cell);
         }
       }
@@ -166,7 +122,7 @@ export class BoardService {
    */
 
   async animateSwap(a: Cell, b: Cell): Promise<boolean> {
-    if (!a.symbol || !b.symbol) return false;
+    if (!a.token || !b.token) return false;
 
     const dir = getSwapDirection(a.pos, b.pos);
     if (!dir) return false;
@@ -179,7 +135,7 @@ export class BoardService {
     await this.animationService.play(
       [
         {
-          symbolId: a.symbol.id,
+          tokenId: a.token.id,
           renderMode: AnimationMode.Move,
           params: {
             x: offset?.x ?? '0px',
@@ -187,7 +143,7 @@ export class BoardService {
           }
         },
         {
-          symbolId: b.symbol.id,
+          tokenId: b.token.id,
           renderMode: AnimationMode.Move,
           params: {
             x: oppositeOffset?.x ?? '0px',
@@ -200,35 +156,35 @@ export class BoardService {
   }
 
   async animateClear(matchCells: Cell[]): Promise<void> {
-    const animCells = matchCells.filter(cell => cell.symbol);
+    const animCells = matchCells.filter(cell => cell.token);
 
     if (animCells.length === 0) return;
 
     await this.animationService.play(
       animCells.map(cell => ({
-        symbolId: cell.symbol!.id,
+        tokenId: cell.token!.id,
         renderMode: AnimationMode.Clearing,
       }))
     );
   }
 
-  async animateDrop(oldBoard: BoardState, newBoard: BoardState): Promise<void> {
-    const animations: SymbolAnimation[] = Array.from({ length: oldBoard.cols }).flatMap((_, col) => {
+  async animateDrop(oldBoard: Board, newBoard: Board): Promise<void> {
+    const animations: TokenAnimation[] = Array.from({ length: oldBoard.cols }).flatMap((_, col) => {
       const oldCol = oldBoard.getColumn(col);
       const newCol = newBoard.getColumn(col);
 
       return oldCol
         .map((oldCell, row) => {
-          if (!oldCell.symbol) return null;
+          if (!oldCell.token) return null;
 
-          const newRow = newCol.findIndex(c => c.symbol?.id === oldCell.symbol!.id);
+          const newRow = newCol.findIndex(c => c.token?.id === oldCell.token!.id);
           if (newRow === -1) return null;
 
           const fallDistance = newRow - row;
           if (fallDistance <= 0) return null;
 
-          const animation: SymbolAnimation = {
-            symbolId: oldCell.symbol.id,
+          const animation: TokenAnimation = {
+            tokenId: oldCell.token.id,
             renderMode: AnimationMode.Move,
             params: {
               x: '0px',
@@ -237,16 +193,16 @@ export class BoardService {
           };
           return animation;
         })
-        .filter((anim): anim is SymbolAnimation => anim !== null);
+        .filter((anim): anim is TokenAnimation => anim !== null);
     });
 
     if (animations.length === 0) return;
     await this.animationService.play(animations);
   }
 
-  async animateCreate(newSymbols: Cell[]): Promise<void> {
-    const animations: SymbolAnimation[] = newSymbols.map(cell => ({
-      symbolId: cell.symbol!.id,
+  async animateCreate(newTokens: Cell[]): Promise<void> {
+    const animations: TokenAnimation[] = newTokens.map(cell => ({
+      tokenId: cell.token!.id,
       renderMode: AnimationMode.Creating,
       params: {}
     }));
@@ -255,15 +211,15 @@ export class BoardService {
     await this.animationService.play(animations);
   }
 
-  async animateCarousel(board: BoardState) {
+  async animateCarousel(board: Board) {
     const animations = [];
 
     for (let row = 0; row < board.rows; row++) {
       const dir = row % 2 === 0 ? Dir.RIGHT : Dir.LEFT;
-      const cells = board.getRow(row).filter(c => c.symbol);
+      const cells = board.getRow(row).filter(c => c.token);
 
       animations.push(...cells.map(cell => ({
-        symbolId: cell.symbol!.id,
+        tokenId: cell.token!.id,
         renderMode: AnimationMode.Move,
         params: {
           x: dir === Dir.LEFT ? '-1px' : '1px',
@@ -275,59 +231,46 @@ export class BoardService {
     await this.animationService.play(animations);
   }
 
-  async animateFadeOut(board: BoardState) {
-    const cellsWithSymbols = board.cells.filter(c => c.symbol);
+  async animateFadeOut(board: Board) {
+    const cellsWithtokens = board.cells.filter(c => c.token);
 
-    if (cellsWithSymbols.length === 0) return;
+    if (cellsWithtokens.length === 0) return;
 
     await this.animationService.play(
-      cellsWithSymbols.map(cell => ({
-        symbolId: cell.symbol!.id,
+      cellsWithtokens.map(cell => ({
+        tokenId: cell.token!.id,
         renderMode:AnimationMode.FadeOut,
       }))
     );
   }
 
-  async animateFadeIn(board: BoardState) {
-    const cellsWithSymbols = board.cells.filter(c => c.symbol);
+  async animateFadeIn(board: Board) {
+    const cellsWithtokens = board.cells.filter(c => c.token);
 
-    if (cellsWithSymbols.length === 0) return;
+    if (cellsWithtokens.length === 0) return;
 
     await this.animationService.play(
-      cellsWithSymbols.map(cell => ({
-        symbolId: cell.symbol!.id,
+      cellsWithtokens.map(cell => ({
+        tokenId: cell.token!.id,
         renderMode:AnimationMode.FadeIn,
       }))
     );
   }
 
   // -- OTHER METHODS ----
-  private pickSymbolForCell(board: BoardState, cell: Cell): string {
-    const forbidden = new Set<string>();
 
-    // Check left 2
-    const leftMatch = this.checkMatchInDirection(board, cell, getDirectionDelta(Dir.LEFT));
-    if (leftMatch) forbidden.add(leftMatch);
-
-    // Check up
-    const upMatch = this.checkMatchInDirection(board, cell, getDirectionDelta(Dir.UP));
-    if (upMatch) forbidden.add(upMatch);
-
-    return randomSymbolExcluding(forbidden);
-  }
-
-  private checkMatchInDirection(board: BoardState, cell: Cell, delta: Position, depth: number = MATCH_CHECK_DEPTH): string | null {
-    if (!cell.symbol) return null;
+  private checkMatchInDirection(board: Board, cell: Cell, delta: Position, depth: number = MATCH_CHECK_DEPTH): string | null {
+    if (!cell.token) return null;
 
     const runLength = board.getRunLength(cell.pos, delta);
     if (runLength >= depth + 1) {
-      return cell.symbol.kind;
+      return cell.token.kind;
     }
 
     return null;
   }
 
-  public detectMatches(board: BoardState | null = this.board): Cell[] {
+  public detectMatches(board: Board | null = this.board): Cell[] {
     if (!board) return [];
 
     const horizontalMatches = this.scanMatchesInDirection(board, getDirectionDelta(Dir.RIGHT));
@@ -337,16 +280,16 @@ export class BoardService {
     return Array.from(allMatches);
   }
 
-  private scanMatchesInDirection(board: BoardState, delta: Position): Set<Cell> {
+  private scanMatchesInDirection(board: Board, delta: Position): Set<Cell> {
     if (!board || !board.cells) return new Set<Cell>();
     const matchedCells = new Set<Cell>();
 
     for (const cell of board.cells) {
-      if (!cell.symbol) continue;
+      if (!cell.token) continue;
 
       const prevPos = cell.pos.add(delta.multiply(-1));
       const prevCell = board.getCell(prevPos);
-      if (prevCell?.getSymbolKind() === cell.symbol.kind) continue;
+      if (prevCell?.tokenVisual === cell.token.visual) continue;
 
       const runLength = board.getRunLength(cell.pos, delta);
 
@@ -362,21 +305,21 @@ export class BoardService {
     return matchedCells;
   }
 
-  applyGravity(board: BoardState): BoardState {
+  applyGravity(board: Board): Board {
     let newBoard = board;
 
     for (let col = 0; col < board.cols; col++) {
       const column = board.getColumn(col);
 
-      const symbols = column.filter(c => c.symbol).map(c => c.symbol!);
+      const tokens = column.filter(c => c.token).map(c => c.token!);
 
-      const missingCount = column.length - symbols.length;
+      const missingCount = column.length - tokens.length;
 
-      const newSymbols = Array.from({ length: missingCount }, () => createSymbol());
+      const newTokens = Array.from({ length: missingCount }, () => EmojiToken.random());
 
-      const finalSymbols = [...newSymbols, ...symbols];
+      const finalTokens = [...newTokens, ...tokens];
 
-      const updatedCells = column.map((cell, i) => cell.withSymbol(finalSymbols[i]));
+      const updatedCells = column.map((cell, i) => cell.withToken(finalTokens[i]));
 
       newBoard = newBoard.updateCells(updatedCells);
     }
@@ -384,20 +327,20 @@ export class BoardService {
     return newBoard;
   }
 
-  detectNewSymbols(oldBoard: BoardState, newBoard: BoardState): Cell[] {
-    const oldSymbolIds = new Set<string>();
+  detectNewTokens(oldBoard: Board, newBoard: Board): Cell[] {
+    const oldtokenIds = new Set<string>();
 
     for (const cell of oldBoard.cells) {
-      if (cell.symbol) oldSymbolIds.add(cell.symbol.id);
+      if (cell.token) oldtokenIds.add(cell.token.id);
     }
 
     return newBoard.cells.filter(cell => {
-      return cell.symbol && !oldSymbolIds.has(cell.symbol.id);
+      return cell.token && !oldtokenIds.has(cell.token.id);
     })
   }
 
-  private causesMatch(board: BoardState, cell: Cell, symbolKind: string): boolean {
-    const testCell = cell.withSymbol(createSymbol(symbolKind));
+  private causesMatch(board: Board, cell: Cell, tokenVisual: string): boolean {
+    const testCell = cell.withToken(new EmojiToken(tokenVisual));
     const testBoard = board.updateCells([testCell]);
 
     const matches = this.detectMatches(testBoard);

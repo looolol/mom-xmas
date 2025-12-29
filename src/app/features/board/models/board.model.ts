@@ -1,55 +1,61 @@
 import {Cell, CellType} from './cell.model';
 import {Position} from '../../../core/models/position.model';
+import {EmojiToken, Token, TokenVisual} from './token';
+import {Level} from '../../game/models/level.model';
+
 
 export interface BoardConfig {
   rows: number;
   cols: number;
   layout?: CellType[][];
+  tokenFactory?: TokenFactory;
 }
 
-export function getCellType(row: number, col: number, layout?: CellType[][]): CellType {
-  return layout?.[row]?.[col] ?? CellType.Normal
+export function getCellType(pos: Position, layout: CellType[][] | undefined) {
+  return layout?.[pos.row]?.[pos.col] ?? CellType.Normal;
 }
 
 
-export class BoardState {
+export class Board {
   constructor(
-    public rows: number,
-    public cols: number,
-    public cells: Cell[]
+    public readonly rows: number,
+    public readonly cols: number,
+    public readonly cells: Cell[]
   ) {}
 
+  /**
+   * Get linear index in cells array from Position or (row, col)
+   */
   getIndex(pos: Position): number | undefined;
   getIndex(row: number, col: number): number | undefined;
   getIndex(arg1: number | Position, arg2?: number | Position): number | undefined {
     if (arg1 instanceof Position) {
+      if (!this.isValidPosition(arg1)) return undefined;
       return arg1.row * this.cols + arg1.col;
-    } else {
-      if (typeof arg1 === 'number' && typeof arg2 === 'number') {
-        return arg1 * this.cols + arg2;
-      }
+    }
+    else if (typeof arg2 === 'number') {
+      if (arg1 < 0 || arg1 >= this.rows || arg2 < 0 || arg2 >= this.cols) return undefined;
+      return arg1 * this.cols + arg2;
     }
     return undefined;
   }
 
+  /**
+   * Get cell at Position or (row, col)
+   */
   getCell(pos: Position): Cell | undefined;
   getCell(row: number, col: number): Cell | undefined;
   getCell(arg1: number | Position, arg2?: number): Cell | undefined {
-    if (arg1 instanceof Position) {
-      return this.getCell(arg1.row, arg1.col);
-    } else {
-       if (typeof arg1 === 'number' && typeof arg2 === 'number') {
-        const pos = new Position(arg1, arg2);
-        if (!pos.isValid(this.rows, this.cols)) return undefined;
-
-        const idx = this.getIndex(arg1, arg2);
-        if (idx === undefined) return undefined;
-        return this.cells[idx];
-      }
-    }
-    return undefined;
+    const index = (arg1 instanceof Position)
+      ? this.getIndex(arg1)
+      : this.getIndex(arg1 as number, arg2 as number);
+    if (index === undefined) return undefined;
+    return this.cells[index];
   }
 
+  /**
+   * Get all cells in a given column
+   */
   getColumn(col: number): Cell[] {
     const column: Cell[] = [];
     for (let row = 0; row < this.rows; row++) {
@@ -59,27 +65,33 @@ export class BoardState {
     return column;
   }
 
-  getRow(r: number): Cell[] {
-    const row: Cell[] = [];
+  /**
+   * Get all cells in a given row
+   */
+  getRow(row: number): Cell[] {
+    const rowCells: Cell[] = [];
     for (let col = 0; col < this.cols; col++) {
-      const cell = this.getCell(r, col);
-      if (cell) row.push(cell);
+      const cell = this.getCell(row, col);
+      if (cell) rowCells.push(cell);
     }
-    return row;
+    return rowCells;
   }
 
+  /**
+   * Calculate run length of matching tokens from start position
+   * moving along delta direction
+   */
   getRunLength(start: Position, delta: Position): number {
     const startCell = this.getCell(start);
-    if (!startCell?.symbol) return 0;
+    if (!startCell?.token) return 0;
 
-    const baseKind = startCell.symbol.kind;
+    const baseVisual = startCell.token.visual;
     let length = 1;
-
     let currentPos = start.add(delta);
 
     while (this.isValidPosition(currentPos)) {
       const cell = this.getCell(currentPos);
-      if (!cell?.symbol || cell.symbol.kind !== baseKind) break;
+      if (!cell?.token || cell.token.visual !== baseVisual) break;
 
       length++;
       currentPos = currentPos.add(delta);
@@ -88,30 +100,66 @@ export class BoardState {
     return length;
   }
 
-  updateCells(updatedCells: Cell[]): BoardState {
+  /**
+   * Create a new Board with updated cells, replacing existing cells
+   * matching updatedCells positions.
+   */
+  updateCells(updatedCells: Cell[]): Board {
     const newCells = this.cells.map(cell => {
       const updatedCell = updatedCells.find(c => c.pos.equals(cell.pos));
       return updatedCell ?? cell;
     });
-    return new BoardState(this.rows, this.cols, newCells);
+    return new Board(this.rows, this.cols, newCells);
   }
 
+  /**
+   * Check if cell at pos has a token
+   */
+  hasTokenAt(pos: Position): boolean {
+    return !!this.getCell(pos)?.token;
+  }
+
+  /**
+   * Check if cell at pos is type Blocked
+   */
+  isBlockedAt(pos: Position): boolean {
+    return this.getCell(pos)?.isBlocked() ?? false;
+  }
+
+  /**
+   * Validate if position is within board bounds.
+   */
   isValidPosition(pos: Position): boolean {
     return pos.row >= 0 && pos.row < this.rows && pos.col >= 0 && pos.col < this.cols;
   }
-}
 
-export function getIndex(pos: Position, cols: number): number | undefined;
-export function getIndex(row: number, col: number, cols: number): number | undefined;
-export function getIndex(arg1: number | Position, arg2: number | Position, arg3?: number): number | undefined {
-  if (arg1 instanceof Position && typeof arg2 === 'number') {
-    return arg1.row * arg2 + arg1.col;
-  } else {
-    if (typeof arg1 === 'number' && typeof arg2 === 'number' && typeof arg3 === 'number') {
-      return arg1 * arg3 + arg2;
+  /**
+   */
+  static createNewBoard(config: BoardConfig) {
+    const cells: Cell[] = [];
+    const tokenFactory = config.tokenFactory ?? (() => undefined);
+
+    for (const pos of allPositions(config.rows, config.cols)) {
+      const index = pos.row * config.cols + pos.col;
+      const type = getCellType(pos, config.layout);
+
+      // No token for blocked / null cells
+      if (type === CellType.Blocked || type === CellType.Null) {
+        cells.push(new Cell(pos, index, type));
+        continue;
+      }
+
+      const token = tokenFactory(getExcludedTokens(pos, config.cols, cells));
+
+      cells.push(new Cell(pos, index, type, token));
     }
+
+    return new Board(config.rows, config.cols, cells);
   }
-  return undefined;
+
+  static createFromLevel(level: Level): Board {
+    return this.createNewBoard(level.boardConfig);
+  }
 }
 
 export function* allPositions(rows: number, cols: number): IterableIterator<Position> {
@@ -121,3 +169,39 @@ export function* allPositions(rows: number, cols: number): IterableIterator<Posi
     }
   }
 }
+
+function getTokenVisualAt(pos: Position, cols: number, cells: Cell[]): TokenVisual | undefined{
+  if (pos.row < 0 || pos.col < 0) return undefined;
+
+  const index = pos.row * cols + pos.col;
+  if (index >= cells.length) return undefined;
+
+  return cells[index]?.token?.visual;
+}
+
+function getExcludedTokens(pos: Position, cols: number, cells: Cell[]) {
+  const excludedTokens = new Set<TokenVisual>();
+
+  // check left neighbors for horizontal match
+  const left1 = getTokenVisualAt(new Position(pos.row, pos.col - 1), cols, cells);
+  const left2 = getTokenVisualAt(new Position(pos.row, pos.col - 2), cols, cells);
+  if (left1 && left2 && left1 === left2) {
+    excludedTokens.add(left1);
+  }
+
+  // check up neighbors for vertical match
+  const up1 = getTokenVisualAt(new Position(pos.row - 1, pos.col), cols, cells);
+  const up2 = getTokenVisualAt(new Position(pos.row - 2, pos.col), cols, cells);
+  if (up1 && up2 && up1 === up2) {
+    excludedTokens.add(up1);
+  }
+
+  return excludedTokens
+}
+
+
+type TokenFactory = (excludedTokens: Set<TokenVisual>) => Token | undefined;
+
+export const EmojiTokenFactory: TokenFactory = ((excludedTokens: Set<string>) => {
+  return EmojiToken.random(excludedTokens);
+});

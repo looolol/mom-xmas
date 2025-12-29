@@ -6,8 +6,8 @@ import {
   GameEvent,
   GameEventType
 } from '../models/event.model';
-import {DialogService} from './dialog.service';
 import {UI_DISPLAY_DURATIONS} from '../../../core/models/ui-messages.model';
+import {DialogService} from '../../../core/services/dialog.service';
 
 @Injectable({
   providedIn: 'root'

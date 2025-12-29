@@ -1,8 +1,8 @@
-export const SYMBOLS = [
+export const TOKENS = [
   '🍪', '🌏', '🔥',  '🎠',  '⭐', '😈',
 ];
 
-export const BURNT_SYMBOLS: Record<string, string> = {
+export const BURNT_TOKENS: Record<string, string> = {
   '🍪': '⚫',
   '🌏': '🤢',
   '🔥': '🧯',

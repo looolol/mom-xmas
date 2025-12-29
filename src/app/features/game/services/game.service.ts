@@ -1,8 +1,6 @@
 import {Injectable} from '@angular/core';
 import {BehaviorSubject, map, Subscription} from 'rxjs';
 import {gameModel, GamePhase} from '../models/game.model';
-import {DialogService} from './dialog.service';
-import {dialogLinesBySymbol} from "../models/dialog.model";
 import {EventService} from "./event.service";
 import {GAME_EVENTS, GameEventType} from "../models/event.model";
 import {PlayerService} from '../../player/services/player.service';
@@ -12,6 +10,8 @@ import {DIALOG_CHANCE, POINTS_PER_CELL, SPECIAL_EVENT_CHANCE} from '../../../cor
 import {BoardConfig} from '../../board/models/board.model';
 import {UI_DISPLAY_DURATIONS, UI_STRINGS} from '../../../core/models/ui-messages.model';
 import {Dir} from '../../../core/models/direction.model';
+import {DialogService} from '../../../core/services/dialog.service';
+import {dialogLinesBySymbol} from '../../../core/models/dialog.model';
 
 @Injectable({
   providedIn: 'root'
@@ -168,7 +168,7 @@ export class GameService {
       this.boardService.updateBoard(droppedBoard);
 
       this.setPhase(GamePhase.Filling);
-      const newSymbols = this.boardService.detectNewSymbols(clearedBoard, droppedBoard);
+      const newSymbols = this.boardService.detectNewTokens(clearedBoard, droppedBoard);
       await this.boardService.animateCreate(newSymbols);
 
       const dialogChance = Math.random();
@@ -203,7 +203,7 @@ export class GameService {
     if (matches.length === 0) return;
 
     const countBySymbol = matches.reduce<Record<string, number>>((acc, cell) => {
-      const symbolKind = cell.getSymbolKind();
+      const symbolKind = cell.tokenVisual;
       if (!symbolKind) return acc;
       acc[symbolKind] = (acc[symbolKind] || 0) + 1;
       return acc;
@@ -260,7 +260,7 @@ export class GameService {
     const posKey = (cell: Cell) => `${cell.pos.row},${cell.pos.col}`;
 
     // Check adjacency for same symbol kind
-    const areAdjacent = (a: Cell, b: Cell) => a.isAdjacent(b) && a.getSymbolKind() === b.getSymbolKind();
+    const areAdjacent = (a: Cell, b: Cell) => a.isAdjacent(b) && a.tokenVisual === b.tokenVisual;
 
     for (const cell of matches) {
       if (visited.has(posKey(cell))) continue;
@@ -307,7 +307,7 @@ export class GameService {
   }
 
   private containsSymbol(matches: Cell[], kind: string): boolean {
-    return matches.some(cell => cell.getSymbolKind() === kind);
+    return matches.some(cell => cell.tokenVisual === kind);
   }
 
 

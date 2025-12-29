@@ -5,7 +5,7 @@ import {
   Output,
 } from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {BoardState} from '../../models/board.model';
+import {Board} from '../../models/board.model';
 import {Cell} from '../../models/cell.model';
 import {CellComponent} from '../cell/cell.component';
 
@@ -21,7 +21,7 @@ import {CellComponent} from '../cell/cell.component';
 export class BoardComponent {
 
 
-  @Input() board!: BoardState | null;
+  @Input() board!: Board | null;
   @Input() tileSizePx!: number;
   @Input() selectedCellIndex: number | null = null;
 

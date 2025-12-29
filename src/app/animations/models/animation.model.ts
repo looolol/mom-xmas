@@ -18,8 +18,8 @@ export interface AnimationParams {
   y?: string;
 }
 
-export interface SymbolAnimation {
-  symbolId: string;
+export interface TokenAnimation {
+  tokenId: string;
   renderMode: AnimationMode;
   params?: AnimationParams;
 }
@@ -37,7 +37,7 @@ export interface AnimationTransaction {
   /**
    * All symbol animations involved in this transaction.
    */
-  animations: SymbolAnimation[];
+  animations: TokenAnimation[];
 
   /**
    * Symbol ids that have completed their animations

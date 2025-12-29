@@ -5,13 +5,12 @@ import {LEVEL_1} from '../../levels/level1';
 import {Subject, takeUntil} from 'rxjs';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
-import {DialogService} from '../../services/dialog.service';
 import {EventService} from '../../services/event.service';
 import {GameEventType} from '../../models/event.model';
 import {MatDialog, MatDialogModule} from '@angular/material/dialog';
 import {CheatSheetComponent} from '../cheat-sheet/cheat-sheet.component';
 import {BoardComponent} from '../../../board/components/board/board.component';
-import {BoardState} from '../../../board/models/board.model';
+import {Board} from '../../../board/models/board.model';
 import {AuthService} from '../../../../core/services/auth.service';
 import {PlayerService} from '../../../player/services/player.service';
 import {BoardService} from '../../../board/services/board.service';
@@ -19,6 +18,7 @@ import {Cell} from '../../../board/models/cell.model';
 import {LeaderboardComponent} from '../../../player/components/leaderboard/leaderboard.component';
 import {SettingsComponent} from '../../../player/components/settings/settings.component';
 import {SAVE_INTERVAL_MS} from '../../../../core/utils/constants';
+import {DialogService} from '../../../../core/services/dialog.service';
 
 @Component({
   selector: 'app-game-page',
@@ -41,7 +41,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
   tileSizePx: number = 32;
   private readonly GAP_PX = 4;
 
-  board: BoardState | null = null;
+  board: Board | null = null;
   selectedCell: Cell | null = null;
   canInteract: boolean = false;
   isPaused: boolean = false;
@@ -146,7 +146,7 @@ export class GamePageComponent implements OnInit, OnDestroy {
 
   startGame() {
     this.currentGameSessionId = Date.now().toString();
-    this.gameService.startGame(LEVEL_1.board);
+    this.gameService.startGame(LEVEL_1.boardConfig);
     this.calculateTileSize(); // init calc
   }
 

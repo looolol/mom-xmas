@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import {BehaviorSubject} from 'rxjs';
-import {UI_DISPLAY_DURATIONS} from '../../../core/models/ui-messages.model';
+import {UI_DISPLAY_DURATIONS} from '../models/ui-messages.model';
 
 @Injectable({
   providedIn: 'root'

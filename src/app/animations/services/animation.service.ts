@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {AnimationTransaction, SymbolAnimation} from '../models/animation.model';
+import {AnimationTransaction, TokenAnimation} from '../models/animation.model';
 import {BehaviorSubject} from 'rxjs';
 
 @Injectable({
@@ -11,7 +11,7 @@ export class AnimationService {
   private activeTransactionPromise: Promise<void> | null = null;
   private activeTransactionResolve: (() => void) | null = null;
 
-  private readonly _symbolAnimation$ = new BehaviorSubject<SymbolAnimation[]>([]);
+  private readonly _symbolAnimation$ = new BehaviorSubject<TokenAnimation[]>([]);
   readonly symbolAnimation$ = this._symbolAnimation$.asObservable();
 
   private readonly _isAnimating$ = new BehaviorSubject<boolean>(false);
@@ -21,7 +21,7 @@ export class AnimationService {
    * Play a full animation transaction.
    * Resolves ONLY when all symbols have finished animating.
    */
-  async play(animations: SymbolAnimation[]): Promise<void> {
+  async play(animations: TokenAnimation[]): Promise<void> {
     if (this.activeTransaction) {
       await this.activeTransactionPromise;
     }
@@ -56,7 +56,7 @@ export class AnimationService {
     if (!tx) return;
 
     // Ignore symbols not part of this transaction
-    if (!tx.animations.some(a => a.symbolId === symbolId)) {
+    if (!tx.animations.some(a => a.tokenId === symbolId)) {
       return;
     }
 

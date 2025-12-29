@@ -2,12 +2,12 @@ import {Component, Input, OnChanges, OnDestroy, OnInit} from '@angular/core';
 import {clearingAnimation, fadeAnimation, motionAnimation,} from '../../../../animations/symbol.animations';
 import {CommonModule} from '@angular/common';
 import {Subscription} from 'rxjs';
-import {AnimationMode, AnimationParams, SymbolAnimation} from '../../../../animations/models/animation.model';
+import {AnimationMode, AnimationParams, TokenAnimation} from '../../../../animations/models/animation.model';
 import {AnimationService} from '../../../../animations/services/animation.service';
 import {EventService} from '../../../game/services/event.service';
 import {GameEventType} from '../../../game/models/event.model';
-import {BURNT_SYMBOLS} from '../../../../core/utils/constants';
-import {randomSymbol, SymbolModel} from '../../models/symbol.model';
+import {BURNT_TOKENS} from '../../../../core/utils/constants';
+import {EmojiToken, Token} from '../../models/token';
 
 
 @Component({
@@ -20,11 +20,11 @@ import {randomSymbol, SymbolModel} from '../../models/symbol.model';
   animations: [motionAnimation, clearingAnimation, fadeAnimation],
 })
 export class SymbolComponent implements OnInit, OnChanges, OnDestroy {
-  @Input() symbol!: SymbolModel;
+  @Input() token!: Token;
   @Input() tileSizePx!: number;
 
   private animationSub?: Subscription;
-  currentAnimation: SymbolAnimation | null = null;
+  currentAnimation: TokenAnimation | null = null;
 
   private eventSub?: Subscription;
   displayedSymbol!: string;
@@ -40,11 +40,11 @@ export class SymbolComponent implements OnInit, OnChanges, OnDestroy {
 
   ngOnInit() {
     this.animationSub = this.animationService.symbolAnimation$.subscribe(list => {
-      this.currentAnimation = list.find(a => a.symbolId === this.symbol.id) ?? null;
+      this.currentAnimation = list.find(a => a.tokenId === this.token.id) ?? null;
     });
 
     // init display symbol;
-    this.displayedSymbol = this.symbol.kind;
+    this.displayedSymbol = this.token.kind;
 
     this.eventSub = this.eventService.events$.subscribe(event =>{
       switch (event.type) {
@@ -83,7 +83,7 @@ export class SymbolComponent implements OnInit, OnChanges, OnDestroy {
 
   onAnimationDone(): void {
     if (!this.currentAnimation) return;
-    this.animationService.notifySymbolDone(this.symbol.id);
+    this.animationService.notifySymbolDone(this.token.id);
   }
 
   get motionState() {
@@ -113,23 +113,23 @@ export class SymbolComponent implements OnInit, OnChanges, OnDestroy {
   private updateDisplaySymbol() {
     if (this.burning) {
       this.displayedSymbol =
-          BURNT_SYMBOLS[this.symbol.kind] ?? this.symbol.kind;
+          BURNT_TOKENS[this.token.kind] ?? this.token.kind;
       return;
     }
 
     if (this.hearingLoss) {
-      this.displayedSymbol = randomSymbol();
+      this.displayedSymbol = EmojiToken.random().emoji;
       return;
     }
 
     if (this.two_phones) {
-      this.displayedSymbol = `${this.symbol.kind}${this.symbol.kind}`;
+      this.displayedSymbol = `${this.token.kind}${this.token.kind}`;
       return;
     }
 
-    this.displayedSymbol = this.symbol.kind;
+    this.displayedSymbol = this.token.kind;
   }
 
   protected readonly AnimationRenderMode = AnimationMode;
-  protected readonly randomSymbol = randomSymbol;
+  protected readonly randomSymbol = EmojiToken.random().emoji;
 }

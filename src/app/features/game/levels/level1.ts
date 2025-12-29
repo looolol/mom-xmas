@@ -1,14 +1,15 @@
-import {Level} from '../models/level.model';
+import {generateLayout, Level} from '../models/level.model';
+import {EmojiTokenFactory} from '../../board/models/board.model';
 
-function generateLayout(number: number, number2: number) {
-  return [];
-}
+const rows = 10;
+const cols = 8;
 
 export const LEVEL_1: Level = {
   id: 'level1',
-  board: {
-    rows: 10,
-    cols: 8,
-    layout: generateLayout(8, 10),
+  boardConfig: {
+    rows: rows,
+    cols: cols,
+    layout: generateLayout(rows, cols),
+    tokenFactory: EmojiTokenFactory,
   }
 }
