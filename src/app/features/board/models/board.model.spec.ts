@@ -234,7 +234,7 @@ describe('Board', () => {
     const updatedCell = cellToUpdate!.withToken(newToken);
     const newCells = [updatedCell];
 
-    const newBoard = board.updateCells(newCells);
+    const newBoard = board.updateCells(newCells).board;
     const newTokens = newBoard.getNewTokens(board);
 
     expect(newTokens.length).toBe(1);
@@ -247,7 +247,7 @@ describe('Board', () => {
     expect(clearedCell).toBeDefined();
 
     const updatedCell = clearedCell!.withToken(undefined);
-    const newBoard = board.updateCells([updatedCell]);
+    const newBoard = board.updateCells([updatedCell]).board;
 
     const newTokens = newBoard.getNewTokens(board);
     expect(newTokens.length).toBe(0);
@@ -257,7 +257,7 @@ describe('Board', () => {
     const cellToUpdate = board.cells[0];
     const newToken = cellToUpdate.token ? cellToUpdate.token : EmojiToken.random();
     const updatedCell = cellToUpdate.withToken(newToken);
-    const updatedBoard = board.updateCells([updatedCell]);
+    const updatedBoard = board.updateCells([updatedCell]).board;
 
     expect(updatedBoard.cells[0]).toEqual(updatedCell);
     expect(updatedBoard.cells[1]).toEqual(board.cells[1]);
@@ -267,28 +267,34 @@ describe('Board', () => {
     const cellA = board.cells[0];
     const cellB = board.cells[1];
 
-    const swappedBoard = board.swapCells(cellA, cellB);
+    const result = board.swapCells(cellA, cellB);
+    const swappedBoard = result.board;
 
     expect(swappedBoard.getCell(cellA.pos)?.token).toEqual(cellB.token);
     expect(swappedBoard.getCell(cellB.pos)?.token).toEqual(cellA.token);
+
+    const changes = result.changes;
+    expect(changes.length).toBe(2);
+    expect(changes[0].token!.equals(cellB.token)).toBeTrue();
+    expect(changes[1].token!.equals(cellA.token)).toBeTrue();
   });
 
   it('rotateRow should rotate tokens left and right', () => {
     const row = 0;
     const originalTokens = board.getRow(row).map(c => c.token);
 
-    const rotatedLeft = board.rotateRow(row, Dir.LEFT);
+    const rotatedLeft = board.rotateRow(row, Dir.LEFT).board;
     const rotatedLeftTokens = rotatedLeft.getRow(row).map(c => c.token);
     expect(rotatedLeftTokens).toEqual([...originalTokens.slice(1), originalTokens[0]]);
 
-    const rotatedRight = board.rotateRow(row, Dir.RIGHT);
+    const rotatedRight = board.rotateRow(row, Dir.RIGHT).board;
     const rotatedRightTokens = rotatedRight.getRow(row).map(c => c.token);
     expect(rotatedRightTokens).toEqual([originalTokens[originalTokens.length - 1], ...originalTokens.slice(0, -1)]);
   });
 
   it('shuffleBoard should shuffle tokens but keep token count same', () => {
     const tokensBefore = board.cells.filter(c => c.hasToken()).map(c => c.token);
-    const shuffledBoard = board.shuffleBoard();
+    const shuffledBoard = board.shuffleBoard().board;
     const tokensAfter = shuffledBoard.cells.filter(c => c.hasToken()).map(c => c.token);
 
     expect(tokensAfter.length).toBe(tokensBefore.length);
@@ -306,9 +312,9 @@ describe('Board', () => {
       board.getCell(1, 1)!,
       board.getCell(1, 2)!,
     ];
-    const clearedBoard = board.clearCells(clearedCells);
+    const clearedBoard = board.clearCells(clearedCells).board;
 
-    const gravityApplied = clearedBoard.applyGravity();
+    const gravityApplied = clearedBoard.applyGravity().board;
 
     const originalTokenCount = board.cells.filter(c => c.hasToken()).length;
     const newTokenCount = gravityApplied.cells.filter(c => c.hasToken()).length;
@@ -325,18 +331,5 @@ describe('Board', () => {
      expect(oldTopRowAfterGravity[i].token).not.toEqual(newTopRow[i].token);
     }
   });
-
-  it('resolveMatches should clear matched cells', () => {
-    const testBoard = createTestBoardWithHorizontalRun();
-    const matches = testBoard.findMatches();
-    expect(matches.length).toBeGreaterThan(0);
-
-    const clearedBoard = testBoard.resolveMatches();
-
-    for (const matchCell of matches) {
-      const cellAfterClear = clearedBoard.getCell(matchCell.pos);
-      expect(cellAfterClear?.token).toBeUndefined();
-    }
-  })
 
 });

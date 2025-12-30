@@ -75,11 +75,11 @@ export class GamePageComponent implements OnInit, OnDestroy {
   ) { }
 
   async ngOnInit() {
-    this.boardService.board$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(board => {
-        this.board = board;
-      });
+    // this.boardService.board$
+    //   .pipe(takeUntil(this.destroy$))
+    //   .subscribe(board => {
+    //     this.board = board;
+    //   });
 
     this.gameService.score$
       .pipe(takeUntil(this.destroy$))

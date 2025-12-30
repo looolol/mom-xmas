@@ -4,6 +4,7 @@ import {EmojiToken, Token, TokenVisual} from './token';
 import {Level} from '../../game/models/level.model';
 import {Dir, getDirectionDelta} from '../../../core/models/direction.model';
 import {getRandomInt} from '../../../core/utils/random';
+import {BoardResult} from './board.result.model';
 
 
 export interface BoardConfig {
@@ -207,28 +208,30 @@ export class Board {
    * Create a new Board with updated cells, replacing existing cells
    * matching updatedCells positions.
    */
-  updateCells(updatedCells: Cell[]): Board {
+  updateCells(updatedCells: Cell[]): BoardResult {
     const updatedMap = new Map(updatedCells.map(c => [c.index, c]));
     const newCells = this.cells.map(cell => updatedMap.get(cell.index) ?? cell);
-    return new Board(this.config, newCells);
+    const newBoard = this.withCells(newCells);
+    return { board: newBoard, changes: updatedCells };
   }
 
   /**
    * Create new board with cell a and b's tokens swapped
    */
-  swapCells(a: Cell, b: Cell): Board {
-    return this.updateCells([
+  swapCells(a: Cell, b: Cell): BoardResult {
+    const newCells = [
       a.withToken(b.token),
       b.withToken(a.token),
-    ]);
+    ];
+    return this.updateCells(newCells);
   }
 
   /**
    * Create new board where all cells marked to clear
-   * have there tokens removed
+   * have their tokens removed
    */
-  clearCells(cellsToClear: Cell[]): Board {
-    if (cellsToClear.length === 0) return this;
+  clearCells(cellsToClear: Cell[]): BoardResult {
+    if (cellsToClear.length === 0) return {board: this, changes: []};
 
     const newCells = cellsToClear.map(c => c.withToken(undefined));
     return this.updateCells(newCells);
@@ -237,7 +240,7 @@ export class Board {
   /**
    * Returns a new Board where a row has been rotated one cell cw or ccw
    */
-  rotateRow(row: number, dir: Dir.LEFT | Dir.RIGHT): Board {
+  rotateRow(row: number, dir: Dir.LEFT | Dir.RIGHT): BoardResult {
     const rowCells = this.getRow(row);
     const tokens = rowCells.map(c => c.token);
 
@@ -256,7 +259,7 @@ export class Board {
   /**
    * Returns a new board with all the Tokens shuffled
    */
-  shuffleBoard() {
+  shuffleBoard(): BoardResult {
     const tokens = this.cells
       .filter(cell => cell.hasToken())
       .map(cell => cell.token!);
@@ -283,7 +286,7 @@ export class Board {
    * sitting above empty cells down.
    * Then spawns new tokens from TokenFactory
    */
-  applyGravity(): Board {
+  applyGravity(): BoardResult {
     let updatedCells: Cell[] = [];
 
     for (let col = 0; col < this.cols; col++) {
@@ -301,24 +304,35 @@ export class Board {
 
       const updatedColumnTokens = [...newTokens, ...existingTokens];
 
-      column.forEach((cell, i) => {
-        updatedCells.push(cell.withToken(updatedColumnTokens[i]));
+      column.forEach((cell, row) => {
+        const oldToken = cell.token;
+        const newToken = updatedColumnTokens[row];
+
+        // Only record actual changes
+        if (
+          oldToken?.id !== newToken?.id ||
+          (!oldToken && newToken) ||
+          (oldToken && !newToken)
+        ) {
+          updatedCells.push(cell.withToken(newToken));
+        }
       });
     }
 
     return this.updateCells(updatedCells);
   }
 
-  resolveMatches(): Board {
-    const matches = this.findMatches();
-    if (!matches.length) return this;
-    return this.clearCells(matches);
-  }
-
 
   /**
    * --- Static Factory Methods ---
    */
+
+  /**
+   * Creates a new Board from this instance with new set of cells
+   */
+  withCells(cells: Cell[]) {
+    return new Board(this.config, cells);
+  }
 
   /**
    */
