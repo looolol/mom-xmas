@@ -1,4 +1,4 @@
-import {computed, Injectable, signal} from '@angular/core';
+import {computed, Injectable, Signal, signal} from '@angular/core';
 import {Board} from '../models/board.model';
 import {Cell} from '../models/cell.model';
 import {BoardChange, BoardResult} from '../models/board.result.model';
@@ -10,7 +10,8 @@ import {Dir} from '../../../core/models/direction.model';
 })
 export class BoardService {
 
-  readonly board = signal<Board>(new Board({rows: 0, cols: 0}, []));
+  private _board = signal<Board>(new Board({ rows: 0, cols: 0}, []));
+  readonly board: Signal<Board> = this._board.asReadonly();
 
   readonly matches = computed(() =>
     this.board().findMatches()
@@ -39,7 +40,7 @@ export class BoardService {
     const result = this.board().shuffleBoard();
 
     // Ignore normal diffs for animation purposes
-    this.board.set(result.board);
+    this._board.set(result.board);
 
     return [{
       type: 'shuffle',
@@ -54,9 +55,10 @@ export class BoardService {
   private applyBoardResult(result: BoardResult): BoardChange[] {
     const oldBoard = this.board();
     const changes = this.diffBoards(oldBoard, result);
-    this.board.set(result.board);
+    this._board.set(result.board);
     return changes;
   }
+
 
   diffBoards(
     oldBoard: Board,

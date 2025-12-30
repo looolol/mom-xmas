@@ -2,7 +2,7 @@
  * Rendering modes used by the VIEW (Angular animations)
  * These map directly to animation triggers / states
  */
-export enum AnimationMode {
+export enum AnimationPhase {
   None = 'none',
   Move = 'move',
   Clearing = 'clearing',
@@ -20,7 +20,7 @@ export interface AnimationParams {
 
 export interface TokenAnimation {
   tokenId: string;
-  renderMode: AnimationMode;
+  renderMode: AnimationPhase;
   params?: AnimationParams;
 }
 

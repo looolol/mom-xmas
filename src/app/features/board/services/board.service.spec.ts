@@ -17,7 +17,7 @@ describe('BoardService', () => {
     service = TestBed.inject(BoardService);
 
     board = Board.createFromLevel(LEVEL_1);
-    service['board'].set(board);
+    service['_board'].set(board);
   });
 
   it('should be created', () => {
@@ -63,7 +63,7 @@ describe('BoardService', () => {
       oldBoard.getCell(new Position(0, 2))!.withToken(new EmojiToken(matchEmoji)),
     ];
     const boardWithMatch = oldBoard.updateCells(matchCells).board;
-    service.board.set(boardWithMatch);
+    service['_board'].set(boardWithMatch);
 
     const matches = service.matches();
     expect(matches.length).toBeGreaterThan(0);
@@ -179,7 +179,7 @@ describe('BoardService', () => {
     }
   });
 
-  it('should shuffle the board and emite a shuffle BoardChange', () => {
+  it('should shuffle the board and emit a shuffle BoardChange', () => {
     const beforeBoard = service['board']();
     const beforeTokenIds = beforeBoard.cells.map(c => c.token?.id);
 
@@ -204,7 +204,7 @@ describe('BoardService', () => {
     const cellToClear = initialBoard.getCell(new Position(2, 0))!;
     const clearedResult = initialBoard.clearCells([cellToClear]);
 
-    service['board'].set(clearedResult.board);
+    service['_board'].set(clearedResult.board);
 
     // Capture token IDs and positions before gravity
     const beforeBoard = service['board']();

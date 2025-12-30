@@ -2,7 +2,7 @@ import {Component, Input, OnChanges, OnDestroy, OnInit} from '@angular/core';
 import {clearingAnimation, fadeAnimation, motionAnimation,} from '../../../../animations/symbol.animations';
 import {CommonModule} from '@angular/common';
 import {Subscription} from 'rxjs';
-import {AnimationMode, AnimationParams, TokenAnimation} from '../../../../animations/models/animation.model';
+import {AnimationPhase, AnimationParams, TokenAnimation} from '../../../../animations/models/animation.model';
 import {AnimationService} from '../../../../animations/services/animation.service';
 import {EventService} from '../../../game/services/event.service';
 import {GameEventType} from '../../../game/models/event.model';
@@ -87,20 +87,20 @@ export class SymbolComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   get motionState() {
-    if (!this.currentAnimation) return AnimationMode.None;
+    if (!this.currentAnimation) return AnimationPhase.None;
 
-    if (this.currentAnimation.renderMode === AnimationMode.Move) return AnimationMode.Move;
-    if (this.currentAnimation.renderMode === AnimationMode.Creating) return AnimationMode.Creating;
-    if (this.currentAnimation.renderMode === AnimationMode.FadeIn) return AnimationMode.FadeIn;
-    if (this.currentAnimation.renderMode === AnimationMode.FadeOut) return AnimationMode.FadeOut;
+    if (this.currentAnimation.renderMode === AnimationPhase.Move) return AnimationPhase.Move;
+    if (this.currentAnimation.renderMode === AnimationPhase.Creating) return AnimationPhase.Creating;
+    if (this.currentAnimation.renderMode === AnimationPhase.FadeIn) return AnimationPhase.FadeIn;
+    if (this.currentAnimation.renderMode === AnimationPhase.FadeOut) return AnimationPhase.FadeOut;
 
-    return AnimationMode.None;
+    return AnimationPhase.None;
   }
 
   get clearingState() {
-    return this.currentAnimation?.renderMode === AnimationMode.Clearing
-    ? AnimationMode.Clearing
-    : AnimationMode.None;
+    return this.currentAnimation?.renderMode === AnimationPhase.Clearing
+    ? AnimationPhase.Clearing
+    : AnimationPhase.None;
   }
 
   get params(): AnimationParams {
@@ -130,6 +130,6 @@ export class SymbolComponent implements OnInit, OnChanges, OnDestroy {
     this.displayedSymbol = this.token.kind;
   }
 
-  protected readonly AnimationRenderMode = AnimationMode;
+  protected readonly AnimationRenderMode = AnimationPhase;
   protected readonly randomSymbol = EmojiToken.random().emoji;
 }

@@ -1,77 +1,77 @@
 import {animate, keyframes, state, style, transition, trigger} from '@angular/animations';
-import {AnimationMode} from './models/animation.model';
+import {AnimationPhase} from './models/animation.model';
 
 
 export const motionAnimation = trigger('motion', [
-  state(AnimationMode.None, style({
+  state(AnimationPhase.None, style({
     transform: 'translate(0, 0) scale(1)'
   })),
 
-  state(AnimationMode.Move, style({
+  state(AnimationPhase.Move, style({
     transform: 'translate(calc({{x}} * {{tileSizePx}}), calc({{y}} * {{tileSizePx}})) scale(1)',
   }), { params: { x: '0px', y: '0px', tileSizePx: '64px' } }),
 
-  state(AnimationMode.Creating, style({
+  state(AnimationPhase.Creating, style({
     transform: 'translate(0, 0) scale(1)',
     opacity: 1,
   })),
 
-  state(AnimationMode.FadeOut, style({
+  state(AnimationPhase.FadeOut, style({
     opacity: 0,
     transform: 'scale(0.8)',
   })),
 
-  state(AnimationMode.FadeIn, style({
+  state(AnimationPhase.FadeIn, style({
     opacity: 1,
     transform: 'scale(1)'
   })),
 
-  transition(`${AnimationMode.None} => ${AnimationMode.Move}`, animate('300ms ease-in-out')),
-  transition(`${AnimationMode.Move} => ${AnimationMode.None}`, animate('0ms')),
+  transition(`${AnimationPhase.None} => ${AnimationPhase.Move}`, animate('300ms ease-in-out')),
+  transition(`${AnimationPhase.Move} => ${AnimationPhase.None}`, animate('0ms')),
 
-  transition(`${AnimationMode.None} => ${AnimationMode.Creating}`, [
+  transition(`${AnimationPhase.None} => ${AnimationPhase.Creating}`, [
     style({ opacity: 0, transform: 'translate(0, 0) scale(0.5)' }),
     animate('400ms ease-out', style({
         opacity: 1,
         transform: 'translate(0, 0) scale(1)', offset: 1
     })),
   ]),
-  transition(`${AnimationMode.Creating} => ${AnimationMode.None}`, animate('0ms')),
+  transition(`${AnimationPhase.Creating} => ${AnimationPhase.None}`, animate('0ms')),
 
-  transition(`${AnimationMode.None} => ${AnimationMode.FadeOut}`, [
+  transition(`${AnimationPhase.None} => ${AnimationPhase.FadeOut}`, [
     animate('400ms ease-in')
   ]),
-  transition(`${AnimationMode.FadeOut} => ${AnimationMode.None}`, [
+  transition(`${AnimationPhase.FadeOut} => ${AnimationPhase.None}`, [
     animate('0ms')
   ]),
 
-  transition(`${AnimationMode.None} => ${AnimationMode.FadeIn}`, [
+  transition(`${AnimationPhase.None} => ${AnimationPhase.FadeIn}`, [
     style({ opacity: 0, transform: 'scale(0.8)' }),
     animate('400ms ease-out', style({ opacity: 1, transform: 'scale(1)' }))
   ]),
-  transition(`${AnimationMode.FadeIn} => ${AnimationMode.None}`, animate('0ms')),
+  transition(`${AnimationPhase.FadeIn} => ${AnimationPhase.None}`, animate('0ms')),
 ]);
 
 
 export const clearingAnimation = trigger('clearing', [
-  state(AnimationMode.None, style({
+  state(AnimationPhase.None, style({
     opacity: 1,
     filter: 'brightness(1)'
   })),
 
-  state(AnimationMode.Clearing, style({
+  state(AnimationPhase.Clearing, style({
     opacity: 0,
     filter: 'brightness(1)'
   })),
 
-  transition(`${AnimationMode.None} => ${AnimationMode.Clearing}`, [
+  transition(`${AnimationPhase.None} => ${AnimationPhase.Clearing}`, [
     animate('400ms ease-out', keyframes([
       style({ opacity: 1, filter: 'brightness(2)', offset: 0 }),
       style({ opacity: 0.7, filter: 'brightness(1)', offset: 0.6 }),
       style({ opacity: 0, filter: 'brightness(1)', offset: 1 }),
     ]))
   ]),
-  transition(`${AnimationMode.Move} => ${AnimationMode.Clearing}`, [
+  transition(`${AnimationPhase.Move} => ${AnimationPhase.Clearing}`, [
     animate('400ms ease-out', keyframes([
       style({ opacity: 1, filter: 'brightness(2)', offset: 0 }),
       style({ opacity: 0.7, filter: 'brightness(1)', offset: 0.6 }),

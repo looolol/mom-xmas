@@ -1,52 +1,35 @@
+import {Cell} from '../../board/models/cell.model';
+
 export enum GamePhase {
-  Uninitialized= 'Uninitialized',
-  Idle = 'Idle',
-  Swapping = 'Swapping',
-  ResolvingMatches = 'ResolvingMatches',
-  ResolvingDrop = 'ResolvingDrop',
-  Filling = 'Filling',
-  Shuffling = 'Shuffling',
-  Bomb = "Bomb",
+  Uninitialized,
+  Idle,
+  Swapping,
+  Resolving,
+  GameOver,
 }
 
-export const VALID_TRANSITIONS: Record<GamePhase, readonly GamePhase[]> = {
+export const validGamePhaseTransitions: Record<GamePhase, GamePhase[]> = {
   [GamePhase.Uninitialized]: [
-    GamePhase.Uninitialized,
-    GamePhase.Idle
+    GamePhase.Idle,
   ],
   [GamePhase.Idle]: [
-    GamePhase.Idle,
     GamePhase.Swapping,
-    GamePhase.ResolvingMatches,
-    GamePhase.Shuffling,
-    GamePhase.Bomb,
-    GamePhase.Uninitialized,
+    GamePhase.GameOver,
   ],
   [GamePhase.Swapping]: [
-    GamePhase.ResolvingMatches,
+    GamePhase.Resolving,
     GamePhase.Idle,
   ],
-  [GamePhase.ResolvingMatches]: [
-    GamePhase.ResolvingDrop,
+  [GamePhase.Resolving]: [
     GamePhase.Idle,
   ],
-  [GamePhase.ResolvingDrop]: [
-    GamePhase.Filling,
-  ],
-  [GamePhase.Filling]: [
-    GamePhase.ResolvingMatches,
-    GamePhase.Idle,
-  ],
-  [GamePhase.Shuffling]: [
-    GamePhase.ResolvingMatches,
-    GamePhase.Idle,
-  ],
-  [GamePhase.Bomb]: [
-    GamePhase.ResolvingMatches,
-    GamePhase.Idle,
-  ],
+  [GamePhase.GameOver]: [],
 }
 
-export function gameModel(current: GamePhase, next: GamePhase): boolean {
-  return VALID_TRANSITIONS[current]?.includes(next) ?? false;
-}
+
+export type GameAction =
+  | { type: 'UPDATE_PHASE'; phase: GamePhase }
+  | { type: 'PLAYER_SWAP'; a: Cell; b: Cell }
+  | { type: 'RESOLVE_MATCHES' }
+  | { type: 'SHUFFLE_BOARD' }
+  | { type: 'USE_BOMB' };
